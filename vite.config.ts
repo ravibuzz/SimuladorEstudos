@@ -7,9 +7,6 @@ export default defineConfig(({ mode }) => {
     return {
       build: {
         outDir: 'dist',
-        rollupOptions: {
-          input: './index.html'
-        }
       },
       server: {
         port: 3000,
