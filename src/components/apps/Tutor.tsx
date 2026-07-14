@@ -28,7 +28,7 @@ const STEP_GUIDES: Record<EcologicalStep, string[]> = {
   ],
   [EcologicalStep.PICO_FORMULATION]: [
     "Como defino a População (P) em um estudo ecológico?",
-    "O que colocar na Intervenção/Exposição (I) e Controle (C)?",
+    "O que colocar na Exposição (E) e no Comparador (C) do PECO?",
     "Como formular um Desfecho (O) mensurável?"
   ],
   [EcologicalStep.DATA_COLLECTION]: [
@@ -44,7 +44,7 @@ const STEP_GUIDES: Record<EcologicalStep, string[]> = {
   [EcologicalStep.WRITING]: [
     "Dicas para redigir a Introdução científica.",
     "O que deve constar na seção de Metodologia?",
-    "Como a Portaria CNPq nº 2.664/2026 regulamenta o uso de IA?"
+    "Como declarar com transparência o uso de IA na pesquisa?"
   ],
   [EcologicalStep.SUBMISSION]: [
     "Como exportar meu manuscrito final?",
@@ -65,6 +65,16 @@ const STEP_GUIDES: Record<EcologicalStep, string[]> = {
     "Como escolher a revista certa para submissão?",
     "O que são periódicos predatórios e por que evitá-los?",
     "Qual a diferença entre Qualis A1, A2 e revistas sem indexação?"
+  ],
+  [EcologicalStep.CONGRESS_SUBMISSION]: [
+    "Como avaliar se o congresso combina com o escopo do meu estudo?",
+    "Qual a diferença entre apresentação oral e pôster?",
+    "Como adaptar o resumo para o edital de um congresso?"
+  ],
+  [EcologicalStep.LATTES_REGISTRATION]: [
+    "Em qual seção do Lattes cadastro projeto, artigo, banner e congresso?",
+    "Qual a diferença entre artigo aceito e artigo publicado?",
+    "Por que devo manter o currículo atualizado sem duplicar produções?"
   ],
   [EcologicalStep.COMPLETED]: [
     "Parabéns pelo encerramento! O que é o Currículo Lattes?",

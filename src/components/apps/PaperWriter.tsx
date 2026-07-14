@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Save, Clipboard, FileText, AlertCircle, Lightbulb, ScanSearch, Loader2, CheckCircle, Printer, DownloadCloud, XCircle } from 'lucide-react';
 import { ClipboardItem, VirtualFile, TabnetData, ArticleHit } from '../../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, ResponsiveContainer } from 'recharts';
@@ -8,6 +8,8 @@ interface PaperWriterProps {
     clipboard: ClipboardItem | null;
     onSaveFile: (file: VirtualFile) => void;
     savedReferences: ArticleHit[];
+    initialFile?: VirtualFile | null;
+    onCloseDocument?: () => void;
 }
 
 interface Attachments {
@@ -17,7 +19,7 @@ interface Attachments {
 
 type Section = 'intro' | 'methods' | 'results' | 'discussion';
 
-export const PaperWriter: React.FC<PaperWriterProps> = ({ clipboard, onSaveFile, savedReferences }) => {
+export const PaperWriter: React.FC<PaperWriterProps> = ({ clipboard, onSaveFile, savedReferences, initialFile, onCloseDocument }) => {
   const [activeSection, setActiveSection] = useState<Section>('intro');
   
   // Guided Inputs (Mad Libs Style)
@@ -49,6 +51,11 @@ export const PaperWriter: React.FC<PaperWriterProps> = ({ clipboard, onSaveFile,
   
   // Toast Notification State
   const [toast, setToast] = useState<{msg: string, type: 'success' | 'error'} | null>(null);
+  const [openedDocument, setOpenedDocument] = useState<VirtualFile | null>(null);
+
+  useEffect(() => {
+      if (initialFile?.type === 'doc') setOpenedDocument(initialFile);
+  }, [initialFile?.id]);
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
       setToast({ msg, type });
@@ -127,11 +134,16 @@ export const PaperWriter: React.FC<PaperWriterProps> = ({ clipboard, onSaveFile,
       setIsCompressing(true);
 
       const ref = savedReferences.find(r => r.id === discussionRefId);
+      const ciInterpretation = resultCI === 'nao_inclui_zero'
+          ? 'IC95% do coeficiente sem incluir 0, sugerindo evidência de correlação diferente de zero'
+          : resultCI === 'inclui_zero'
+              ? 'IC95% incluindo 0, portanto compatível com correlação nula'
+              : 'IC95% não informado';
       const finalContent = `
             ESTUDO ECOLÓGICO
             INTRODUÇÃO: O presente estudo analisou a relação entre a variável de exposição (${introExposure}) e o desfecho (${introOutcome}) na população de ${introPopulation}. A justificativa baseia-se em: ${introJustification}.
             METODOLOGIA: Trata-se de um estudo ${methodsDesign}, utilizando dados agregados provenientes do sistema ${methodsSystem} no período de ${methodsPeriod}. Foram incluídos: ${methodsInclusion}. Os dados foram tabulados no software ${methodsSoftware}. Para análise estatística de correlação, utilizou-se o teste de ${methodsStats}.
-            RESULTADOS: (Ver tabelas e gráficos em anexo). O p-valor interpretado revelou que ${resultPValue}, com intervalo de confiança de ${resultCI || '95%'}.
+            RESULTADOS: (Ver tabelas e gráficos em anexo). A interpretação do p-valor foi: ${resultPValue}. Quanto à precisão da correlação: ${ciInterpretation}.
             DISCUSSÃO: Nossos achados ${discussionConnector} com os resultados apresentados por ${ref?.authors.split(',')[0]} et al., que também investigaram a temática. Como principal limitação deste estudo, destaca-se que ${discussionLimit} (falácia ecológica).
             CONCLUSÃO: Recomenda-se a seguinte intervenção em Saúde Pública: ${publicHealthImpact}.
       `;
@@ -259,13 +271,31 @@ export const PaperWriter: React.FC<PaperWriterProps> = ({ clipboard, onSaveFile,
                             className={`mx-2 border-b-2 bg-transparent outline-none text-center font-bold text-blue-900 w-32 placeholder-blue-200 ${validationError && !methodsSoftware ? 'border-red-500 bg-red-50' : 'border-blue-300'}`} 
                             placeholder="(Ex: Excel, Tabnet)"
                           />.
-                          Para a análise estatística de correlação, foi utilizado o teste de
-                          <input 
-                            value={methodsStats} 
-                            onChange={e=>setMethodsStats(e.target.value)} 
-                            className={`mx-2 border-b-2 bg-transparent outline-none text-center font-bold text-blue-900 w-40 placeholder-blue-200 ${validationError && !methodsStats ? 'border-red-500 bg-red-50' : 'border-blue-300'}`} 
-                            placeholder="(Ex: Correlação de Pearson)"
-                          />.
+                          Para a análise de associação, foi utilizado
+                          <select
+                            value={methodsStats}
+                            onChange={e=>setMethodsStats(e.target.value)}
+                            className={`mx-2 border rounded p-1 bg-white font-bold text-blue-900 ${validationError && !methodsStats ? 'border-red-500' : 'border-slate-300'}`}
+                          >
+                              <option value="">[Selecionar análise]</option>
+                              <option value="Correlação de Pearson">Correlação de Pearson (relação linear)</option>
+                              <option value="Correlação de Spearman">Correlação de Spearman (postos/monotônica)</option>
+                              <option value="Análise descritiva de tendência">Análise descritiva de tendência</option>
+                          </select>.
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+                              <strong className="text-blue-900 block mb-1">Pearson (r)</strong>
+                              Mede associação <em>linear</em> entre duas variáveis quantitativas. Varia de −1 a +1 e não demonstra causalidade.
+                          </div>
+                          <div className="bg-purple-50 border border-purple-200 rounded-xl p-3">
+                              <strong className="text-purple-900 block mb-1">Spearman (ρ)</strong>
+                              Usa postos e avalia associação monotônica. É útil quando a relação não é linear ou os pressupostos de Pearson não são adequados.
+                          </div>
+                          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                              <strong className="text-amber-900 block mb-1">Lembrete</strong>
+                              Correlação não implica causalidade. Considere confundimento, qualidade dos dados e falácia ecológica.
+                          </div>
                       </div>
                   </div>
               );
@@ -314,14 +344,17 @@ export const PaperWriter: React.FC<PaperWriterProps> = ({ clipboard, onSaveFile,
                                   </select>
                               </div>
                               <div>
-                                  <label className="block font-bold text-blue-900 mb-1 text-xs">Intervalo de Confiança (IC95%)</label>
+                                  <label className="block font-bold text-blue-900 mb-1 text-xs">IC95% do coeficiente de correlação</label>
                                   <select value={resultCI} onChange={e => setResultCI(e.target.value)} className="w-full p-2 rounded border border-slate-300">
                                       <option value="">Selecione...</option>
-                                      <option value="nao_inclui">Não inclui o 1 (Associação Forte)</option>
-                                      <option value="inclui">Inclui o 1 (Sem Associação)</option>
+                                      <option value="nao_inclui_zero">Não inclui 0 (evidência de correlação)</option>
+                                      <option value="inclui_zero">Inclui 0 (dados compatíveis com correlação nula)</option>
                                   </select>
                               </div>
                           </div>
+                          <p className="mt-3 text-xs text-slate-600 leading-relaxed">
+                              <strong>Como interpretar:</strong> o p-valor mede a compatibilidade dos dados com a hipótese nula; não informa tamanho do efeito nem relevância clínica. Para correlações, o valor nulo é <strong>0</strong>. O valor <strong>1</strong> é referência nula para medidas de razão, como RR e OR.
+                          </p>
                       </div>
                   </div>
               );
@@ -407,11 +440,39 @@ export const PaperWriter: React.FC<PaperWriterProps> = ({ clipboard, onSaveFile,
       }
   }
 
+  if (openedDocument) {
+      const storedText = typeof openedDocument.content === 'string'
+          ? openedDocument.content
+          : openedDocument.content?.text || 'Este documento não possui conteúdo textual disponível.';
+      return (
+          <div className="h-full bg-slate-800 flex flex-col overflow-hidden">
+              <div className="bg-[#2b579a] text-white px-4 py-3 flex items-center gap-3 shrink-0">
+                  <FileText size={18}/>
+                  <div className="min-w-0">
+                      <div className="text-sm font-bold truncate">{openedDocument.name}</div>
+                      <div className="text-[10px] text-blue-100">Documento salvo • modo de leitura</div>
+                  </div>
+                  <div className="flex-1"/>
+                  <button onClick={() => { setOpenedDocument(null); onCloseDocument?.(); }} className="bg-white/15 hover:bg-white/25 px-3 py-2 rounded-lg text-xs font-bold">
+                      Fechar documento
+                  </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3 md:p-8">
+                  <article className="bg-white max-w-4xl min-h-full mx-auto shadow-2xl p-5 md:p-12 text-slate-900">
+                      <h1 className="text-xl md:text-3xl font-serif font-bold text-center mb-2">Manuscrito científico final</h1>
+                      <p className="text-xs text-center text-slate-500 mb-8">Aberto a partir de Meus Arquivos</p>
+                      <div className="whitespace-pre-wrap font-serif text-sm leading-7 text-justify">{storedText}</div>
+                  </article>
+              </div>
+          </div>
+      );
+  }
+
   // FULL SIMULATED ARTICLE PREVIEW
   if (showFullPreview) {
       const citedArticle = savedReferences.find(r => r.id === discussionRefId);
       return (
-          <div className="absolute inset-0 bg-slate-800 z-50 flex flex-col items-center pt-8 pb-4 overflow-hidden">
+          <div className="absolute inset-0 bg-slate-800 z-50 flex flex-col items-center pt-3 md:pt-8 pb-4 overflow-hidden">
               <div className="flex items-center gap-4 text-white mb-4 w-full max-w-4xl px-4">
                   <CheckCircle className="text-green-400"/>
                   <h2 className="text-xl font-bold">Manuscrito Gerado com Sucesso</h2>
@@ -420,12 +481,12 @@ export const PaperWriter: React.FC<PaperWriterProps> = ({ clipboard, onSaveFile,
                       <Printer size={16}/> Fechar e Salvar
                   </button>
               </div>
-              <div className="bg-white w-full max-w-4xl flex-1 overflow-y-auto p-12 shadow-2xl animate-in slide-in-from-bottom-10">
+              <div className="bg-white w-full max-w-4xl flex-1 overflow-y-auto p-5 md:p-12 shadow-2xl animate-in slide-in-from-bottom-10">
                    <div className="font-serif text-slate-900">
                        <h1 className="text-3xl font-bold text-center mb-2 uppercase">Análise Epidemiológica: {introExposure} e {introOutcome}</h1>
                        <p className="text-center text-sm italic mb-8 text-slate-600">Departamento de Medicina Preventiva - PIG IV</p>
                        
-                       <div className="columns-2 gap-8 text-justify text-sm leading-relaxed">
+                       <div className="columns-1 md:columns-2 gap-8 text-justify text-sm leading-relaxed">
                            <h3 className="font-bold uppercase text-xs tracking-wider mb-2 border-b border-black pb-1">Introdução</h3>
                            <p className="mb-4">
                                As doenças negligenciadas e crônicas representam um desafio significativo para a saúde pública no Brasil. 
@@ -511,28 +572,28 @@ export const PaperWriter: React.FC<PaperWriterProps> = ({ clipboard, onSaveFile,
           </div>
       )}
 
-      <div className="h-14 bg-[#2b579a] border-b border-blue-900 flex items-center px-4 gap-2 shadow-sm z-10 text-white">
+      <div className="min-h-14 bg-[#2b579a] border-b border-blue-900 flex flex-wrap md:flex-nowrap items-center px-2 md:px-4 py-2 gap-2 shadow-sm z-10 text-white">
           <div className="flex items-center gap-2 font-bold mr-4"><FileText/> Pigword</div>
           <div className="h-8 w-px bg-white/20 mx-2"></div>
-          <div className="flex-1 flex justify-center">
-               <div className="flex bg-blue-800/50 p-1 rounded-lg">
+          <div className="order-3 md:order-none w-full md:w-auto md:flex-1 flex justify-start md:justify-center overflow-x-auto">
+               <div className="flex bg-blue-800/50 p-1 rounded-lg min-w-max">
                    {['intro', 'methods', 'results', 'discussion'].map(sec => (
                        <button 
                         key={sec}
                         onClick={() => setActiveSection(sec as Section)}
-                        className={`px-4 py-1 rounded text-xs font-bold capitalize transition-colors ${activeSection === sec ? 'bg-white text-blue-900' : 'text-blue-200 hover:text-white'}`}
+                        className={`px-3 md:px-4 py-1 rounded text-xs font-bold capitalize transition-colors ${activeSection === sec ? 'bg-white text-blue-900' : 'text-blue-200 hover:text-white'}`}
                        >
                            {sec === 'intro' ? 'Introdução' : sec === 'methods' ? 'Métodos' : sec === 'results' ? 'Resultados' : 'Discussão'}
                        </button>
                    ))}
                </div>
           </div>
-          <button onClick={handleSave} className="flex items-center gap-2 text-xs font-bold text-blue-900 bg-white px-6 py-2 rounded hover:bg-blue-50 active:translate-y-0.5 transition-all shadow-sm">
+          <button onClick={handleSave} className="ml-auto flex items-center gap-2 text-xs font-bold text-blue-900 bg-white px-4 md:px-6 py-2 rounded hover:bg-blue-50 active:translate-y-0.5 transition-all shadow-sm">
               <Save size={16}/> Salvar
           </button>
       </div>
-      <div className="flex-1 overflow-auto p-8 flex justify-center bg-[#e5e7eb] relative">
-          <div className="bg-white shadow-xl w-[21cm] min-h-[29.7cm] p-[2.5cm] flex flex-col outline-none text-slate-900 relative">
+      <div className="flex-1 overflow-auto p-2 md:p-8 flex justify-center bg-[#e5e7eb] relative">
+          <div className="bg-white shadow-xl w-full md:w-[21cm] min-h-full md:min-h-[29.7cm] p-4 md:p-[2.5cm] flex flex-col outline-none text-slate-900 relative">
               <h1 className="text-center font-bold text-xl mb-8 font-serif uppercase">Manuscrito Científico Guiado</h1>
               {renderSectionContent()}
           </div>

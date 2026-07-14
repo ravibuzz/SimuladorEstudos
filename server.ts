@@ -272,7 +272,7 @@ app.post("/api/gemini/pubmed", async (req, res) => {
   }
 });
 
-// 4. PICO Formulation Validator Proxy
+// 4. PECO Formulation Validator Proxy (route kept for compatibility)
 app.post("/api/gemini/pico", async (req, res) => {
   const { p, i, c, o, scenario } = req.body;
   if (!scenario) {
@@ -283,7 +283,7 @@ app.post("/api/gemini/pico", async (req, res) => {
   try {
     const ai = getGeminiClient(req);
 
-    const prompt = `Evaluate PICO strategy for ecological study. Scenario: ${scenario.title}. P:${p || ""}, I/E:${i || ""}, C:${c || ""}, O:${o || ""}. Return JSON with isCorrect boolean and feedback string (PT-BR).`;
+    const prompt = `Evaluate the PECO strategy for an ecological study. Scenario: ${scenario.title}. P (population):${p || ""}, E (exposure):${i || ""}, C (comparator):${c || ""}, O (outcome):${o || ""}. Return JSON with isCorrect boolean and feedback string (PT-BR).`;
 
     const response = await generateWithFallback(ai, {
       contents: prompt,
@@ -297,19 +297,19 @@ app.post("/api/gemini/pico", async (req, res) => {
       throw new Error("No text response from Gemini API");
     }
   } catch (error: any) {
-    console.warn("[Server Fallback] PICO Validation API failed, serving automated check:", error?.message || error);
+    console.warn("[Server Fallback] PECO Validation API failed, serving automated check:", error?.message || error);
 
     const hasContent = (p && p.length > 3) && (i && i.length > 3) && (o && o.length > 3);
     if (hasContent) {
       res.json({
         isCorrect: true,
-        feedback: `Sua estratégia PICO está excelente e adequada para o cenário "${scenario.title}". Você definiu a população (P: ${p}), a exposição (I/E: ${i}), a comparação (C: ${c || "Geral"}) e o desfecho (O: ${o}) de forma consistente para um estudo ecológico populacional.`,
+        feedback: `Sua estratégia PECO está adequada para o cenário "${scenario.title}". Você definiu a população (P: ${p}), a exposição (E: ${i}), a comparação (C: ${c || "Geral"}) e o desfecho (O: ${o}) de forma consistente para um estudo ecológico populacional.`,
         suggestion: ""
       });
     } else {
       res.json({
         isCorrect: false,
-        feedback: "Por favor, elabore um pouco mais os campos P (População), I (Exposição/Intervenção) e O (Desfecho). Garanta termos descritivos em nível populacional/agregado.",
+        feedback: "Por favor, elabore um pouco mais os campos P (População), E (Exposição) e O (Desfecho). Garanta termos descritivos em nível populacional/agregado.",
         suggestion: "Dica: Populações em estudos ecológicos são grupos geográficos (ex: residentes dos municípios de SP, setores censitários, etc.)."
       });
     }
@@ -366,8 +366,8 @@ Keep your response relatively short, clear, highly professional, and tailored to
       reply = "Olá, estimado(a) pesquisador(a). Eu sou o **Piglaude**. Lembro-lhe que na metodologia de Estudos Ecológicos comparamos agregados populacionais (geográficos ou temporais), de modo que qualquer correlação encontrada em nível populacional não pode ser transposta ao indivíduo, sob o risco de incorrer no clássico erro metodológico da Falácia Ecológica. Como posso refinar sua jornada metodológica nesta etapa?";
       if (questionText.includes("falácia") || questionText.includes("falacia")) {
         reply = "A **Falácia Ecológica** constitui um erro crasso de inferência metodológica. Ocorre quando tomamos dados agregados de uma coletividade e assumimos, precipitadamente, que a associação observada se manifesta em cada indivíduo. Por exemplo: se distritos com alto consumo de gorduras possuem alta incidência de infarto, não podemos asseverar que 'comer gordura enfarta o indivíduo X', pois o fator de confusão social pode estar mediando essa associação.";
-      } else if (questionText.includes("pico")) {
-        reply = "A **Estratégia PICO** baliza a clareza da pesquisa científica. No estudo ecológico, sua População (P) é geográfica/agregada (ex: residentes dos municípios de SP), sua Exposição (I/E) é o indicador populacional, a Comparação (C) é a região de controle ou a taxa geral, e o Desfecho (O) é a taxa de morbidade ou mortalidade agregada.";
+      } else if (questionText.includes("pico") || questionText.includes("peco")) {
+        reply = "A estratégia **PECO** organiza a pergunta do estudo ecológico: P é a População geográfica ou agregada; E é a Exposição de nível populacional; C é o Comparador, quando pertinente; e O é o Outcome (desfecho), como uma taxa de incidência, internação ou mortalidade.";
       } else if (questionText.includes("datasus") || questionText.includes("sim") || questionText.includes("sinan")) {
         reply = "No ecossistema do **DATASUS**, a acurácia dos dados depende do sistema selecionado: o SIM reúne registros de óbitos (Mortalidade), o SINAN gerencia notificações compulsórias de agravos (Dengue, Tuberculose, AIDS) e o SINASC tabula nascidos vivos. Certifique-se de configurar estas fontes corretamente no Piggle Chrome.";
       }
@@ -375,8 +375,8 @@ Keep your response relatively short, clear, highly professional, and tailored to
       reply = "E aí! Sou o **Pigmini**, direto ao ponto! Lembre-se: em estudos ecológicos medimos grupos inteiros (como taxas municipais), e não pessoas individuais. O maior perigo aqui é a Falácia Ecológica (concluir relações individuais a partir de dados populacionais). Como posso ajudar de forma prática agora?";
       if (questionText.includes("falácia") || questionText.includes("falacia")) {
         reply = "**Falácia Ecológica**: É o erro de misturar nível de grupo com nível individual. Exemplo: se estados com mais consumo de peixe têm menos tuberculose, dizer que 'comer peixe imuniza uma pessoa' é falácia ecológica. Os indivíduos que comem peixe podem não ser os que contraem tuberculose!";
-      } else if (questionText.includes("pico")) {
-        reply = "A estrutura **PICO** organiza sua pergunta de pesquisa de forma matemática: P (População Geográfica), I (Exposição populacional), C (Comparação, se houver) e O (Desfecho como taxa de incidência ou mortalidade). Simples assim!";
+      } else if (questionText.includes("pico") || questionText.includes("peco")) {
+        reply = "A estrutura **PECO** organiza sua pergunta: P (População geográfica), E (Exposição populacional), C (Comparador, se houver) e O (Outcome/desfecho, como taxa de incidência ou mortalidade). Simples assim!";
       } else if (questionText.includes("datasus") || questionText.includes("sim") || questionText.includes("sinan")) {
         reply = "Guia rápido do **DATASUS** no simulador: SIM = óbitos e mortalidade; SINAN = agravos notificados (como Dengue, AIDS, Tuberculose); SIH = internações hospitalares. Escolha o sistema exato na configuração do DATASUS para carregar seus dados!";
       }
@@ -385,8 +385,8 @@ Keep your response relatively short, clear, highly professional, and tailored to
       reply = "Olá! Sou o **PigGPT**, seu assistente de estudos epidemiológicos. Lembre-se de que em Estudos Ecológicos avaliamos dados secundários de grupos populacionais agregados (como taxas municipais). O principal conceito a reter é evitar a Falácia Ecológica (assumir que relações coletivas se aplicam diretamente a cada indivíduo). Como posso ajudar você a prosseguir nesta etapa?";
       if (questionText.includes("falácia") || questionText.includes("falacia")) {
         reply = "A **Falácia Ecológica** é o erro de inferir que uma correlação encontrada no nível populacional se aplica necessariamente a cada indivíduo desse grupo. Por exemplo: se cidades com maior número de bibliotecas têm menor taxa de infarto, dizer que 'frequentar bibliotecas protege o coração do indivíduo' é uma falácia ecológica. O fator de confusão pode ser a renda média de cada cidade.";
-      } else if (questionText.includes("pico")) {
-        reply = "A estratégia **PICO** nos ajuda a formular uma pergunta de pesquisa estruturada: P (População Geográfica/Agregada), I (Exposição ou Intervenção de nível populacional), C (Comparação, se houver) e O (Desfecho populacional, como incidência ou mortalidade). Em estudos ecológicos, todas as variáveis devem ser coletadas em nível agregado.";
+      } else if (questionText.includes("pico") || questionText.includes("peco")) {
+        reply = "A estratégia **PECO** ajuda a formular uma pergunta estruturada: P (População geográfica/agregada), E (Exposição de nível populacional), C (Comparador, se houver) e O (Outcome/desfecho populacional). Em estudos ecológicos, a unidade de análise deve permanecer no nível agregado.";
       } else if (questionText.includes("datasus") || questionText.includes("sim") || questionText.includes("sinan")) {
         reply = "No **DATASUS**, cada sistema serve a uma finalidade específica: o SIM monitora mortalidade, o SINAN monitora agravos de notificação (Dengue, Tuberculose, Hanseníase, AIDS) e o SIH registra internações hospitalares. Use o sistema correto para que o Piggle Chrome exiba os dados certos!";
       }
@@ -398,7 +398,10 @@ Keep your response relatively short, clear, highly professional, and tailored to
 
 // --- Vite Dev Middleware or Serve Production Build ---
 async function setupFrontend() {
-  if (process.env.NODE_ENV !== "production") {
+  const isBundledProduction = path.basename(process.argv[1] || '').toLowerCase() === 'server.cjs';
+  const shouldServeProduction = process.env.NODE_ENV === "production" || isBundledProduction;
+
+  if (!shouldServeProduction) {
     const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },

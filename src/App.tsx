@@ -154,7 +154,7 @@ const EducationalPopup = ({ title, content, onClose }: { title: string, content:
     };
 
     return (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[100] bg-white/95 backdrop-blur border-l-4 border-blue-600 text-slate-800 p-6 rounded-r-lg shadow-2xl max-w-lg animate-in fade-in slide-in-from-top-4">
+        <div className="absolute top-4 md:top-20 left-3 right-3 md:left-1/2 md:right-auto md:-translate-x-1/2 z-[100] bg-white/95 backdrop-blur border-l-4 border-blue-600 text-slate-800 p-4 md:p-6 rounded-r-lg shadow-2xl md:max-w-lg max-h-[82vh] overflow-y-auto animate-in fade-in slide-in-from-top-4">
             <div className="flex items-start gap-4">
                 <div className="bg-blue-100 p-2 rounded-full text-blue-600">
                     <Lightbulb size={24} />
@@ -192,6 +192,8 @@ const App: React.FC = () => {
   const [savedReferences, setSavedReferences] = useState<ArticleHit[]>([]);
   const [fileToOpen, setFileToOpen] = useState<VirtualFile | null>(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [bannerCompleted, setBannerCompleted] = useState(false);
+  const [showFinishPrompt, setShowFinishPrompt] = useState(false);
 
   // Phase 1 State
   const [selectedDesign, setSelectedDesign] = useState<string | null>(null);
@@ -295,7 +297,7 @@ const App: React.FC = () => {
           setXp(prev => prev + 100);
           setShowMissionWidget(true);
           setPopup({
-              title: "Estratégia PICO Aprovada!",
+              title: "Estratégia PECO Aprovada!",
               content: `Ótimo! ${result.feedback || "Sua pergunta condiz com o tema e o desenho ecológico."} Agora você deve coletar os dados. Abra o Piggle Chrome e acesse o DATASUS. Atenção ao sistema correto (SIM vs SINAN).`
           });
       } else {
@@ -317,9 +319,10 @@ const App: React.FC = () => {
     }
 
     if (file.type === 'doc') {
+        setCurrentStep(EcologicalStep.SUBMISSION);
         setPopup({
             title: "Manuscrito Salvo!",
-            content: "Parabéns! Seu artigo foi salvo na pasta 'Documentos'.\n\nO próximo passo é enviar para avaliação:\n1. Abra o **Piggle Chrome**\n2. Acesse o **Webmail**\n3. Envie um novo e-mail para o Orientador anexando seu arquivo."
+            content: "Parabéns! Seu artigo foi salvo na pasta 'Documentos' e a Meta 5 foi concluída.\n\nAgora abra o **Piggle Chrome**, acesse o **Pigmail** e envie o manuscrito ao orientador. Depois do envio, aguarde: a resposta chegará como um novo e-mail na caixa de entrada."
         });
     }
   };
@@ -337,6 +340,7 @@ const App: React.FC = () => {
           setFileToOpen(file);
           toggleWindow(AppID.SHEET);
       } else if (file.type === 'doc') {
+          setFileToOpen(file);
           toggleWindow(AppID.WORD);
       }
   };
@@ -360,18 +364,41 @@ const App: React.FC = () => {
   };
 
   const handleEmailSend = (attachmentId: string | null) => {
-      if (attachmentId === 'BANNER_TRIGGER') {
-          setCurrentStep(EcologicalStep.JOURNAL_SUBMISSION);
+      if (attachmentId === 'OPEN_BANNER') {
+          setCurrentStep(EcologicalStep.BANNER_CREATION);
           setPopup({
-              title: "Pronto para Publicar!",
-              content: "O Banner foi finalizado. Agora, seu orientador pediu para você submeter o artigo a uma revista científica. Abra o 'Piggle Chrome' e acesse o novo ícone 'Portal de Periódicos'."
+              title: "Parecer aprovado",
+              content: "O orientador aprovou o manuscrito. Agora abra o **Banner Designer Pro** e monte todas as seções do pôster científico antes de finalizar."
           });
           toggleWindow(AppID.BANNER);
           return;
       }
 
+      if (attachmentId === 'BANNER_FINISHED') {
+          setBannerCompleted(true);
+          handleSaveFile({
+              id: `banner-${Date.now()}`,
+              name: 'Banner_Cientifico_Final.poster',
+              type: 'poster',
+              folder: 'documents',
+              content: { status: 'finalizado', scenario: currentScenario?.title },
+              createdAt: new Date()
+          });
+          setCurrentStep(EcologicalStep.JOURNAL_SUBMISSION);
+          setPopup({
+              title: "Banner finalizado e salvo!",
+              content: "Seu banner foi salvo em **Meus Arquivos > Documentos**. Agora abra o **Piggle Chrome** e use o **Portal de Periódicos** para escolher uma revista adequada ao escopo do estudo."
+          });
+          closeWindow(AppID.BANNER);
+          return;
+      }
+
       setCurrentStep(EcologicalStep.AWAITING_REVIEW);
       setXp(prev => prev + 200);
+      setPopup({
+          title: "E-mail enviado ao orientador",
+          content: "Envio confirmado. O parecer não é instantâneo: aguarde alguns segundos e acompanhe a caixa de entrada do **Pigmail**. Um aviso aparecerá quando a resposta chegar."
+      });
       
       // Increased delay to 15 seconds
       setTimeout(() => {
@@ -388,7 +415,7 @@ const App: React.FC = () => {
           setEmails(prev => [newEmail, ...prev]);
           setPopup({
               title: "Você tem um novo e-mail!",
-              content: "O orientador respondeu sua submissão. Abra o Webmail no Piggle Chrome para ver o parecer final."
+              content: "O orientador respondeu sua submissão. Abra o **Pigmail** no Piggle Chrome para ler o parecer e liberar a próxima etapa."
           });
       }, 15000); // 15s Delay
   };
@@ -404,7 +431,8 @@ const App: React.FC = () => {
 
   // Handle Lattes success
   const handleLattesSuccess = () => {
-      setIsGameOver(true);
+      setCurrentStep(EcologicalStep.COMPLETED);
+      setShowFinishPrompt(true);
   }
 
   // Calculate Skill Scores
@@ -471,7 +499,9 @@ const App: React.FC = () => {
   };
 
   const handleRestart = () => {
-      window.location.href = window.location.href;
+      if (window.confirm("Deseja realmente reiniciar a simulação? Todo o progresso desta partida será apagado.")) {
+          window.location.reload();
+      }
   };
 
   const handlePrintCertificate = () => {
@@ -520,9 +550,9 @@ const App: React.FC = () => {
 
   if (!isLoggedIn) {
     return (
-      <div className="h-screen w-screen bg-slate-900 flex items-center justify-center relative overflow-hidden">
+      <div className="h-screen w-screen bg-slate-900 flex items-center justify-center relative overflow-hidden p-4">
          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072')] bg-cover opacity-40"></div>
-         <div className="z-10 bg-white/10 p-8 rounded-3xl backdrop-blur-xl border border-white/20 text-center shadow-2xl animate-in zoom-in duration-500 max-w-md w-full">
+         <div className="z-10 bg-white/10 p-5 md:p-8 rounded-3xl backdrop-blur-xl border border-white/20 text-center shadow-2xl animate-in zoom-in duration-500 max-w-md w-full">
              <div className="w-20 h-20 bg-slate-200 rounded-full mx-auto mb-4 flex items-center justify-center shadow-inner border-4 border-white/10">
                  <User size={40} className="text-slate-500" />
              </div>
@@ -583,11 +613,11 @@ const App: React.FC = () => {
                 }
             `}</style>
 
-            <div className="h-screen bg-slate-900 flex items-center justify-center p-8 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072')] bg-cover overflow-auto">
-                <div className="bg-white/95 backdrop-blur-xl rounded-lg shadow-2xl w-full max-w-6xl h-[90vh] border border-white/20 p-8 flex gap-8 animate-in zoom-in duration-700">
+            <div className="min-h-screen bg-slate-900 flex items-center justify-center p-3 md:p-8 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072')] bg-cover overflow-auto">
+                <div className="bg-white/95 backdrop-blur-xl rounded-lg shadow-2xl w-full max-w-6xl min-h-[90vh] md:h-[90vh] border border-white/20 p-4 md:p-8 flex flex-col md:flex-row gap-6 md:gap-8 animate-in zoom-in duration-700">
                     
                     {/* Report Side */}
-                    <div id="no-print" className="w-1/3 border-r border-slate-200 pr-8 flex flex-col">
+                    <div id="no-print" className="w-full md:w-1/3 md:border-r border-slate-200 md:pr-8 flex flex-col min-h-[420px]">
                         <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2"><BrainCircuit className="text-blue-600"/> Boletim de Habilidades</h2>
                         <div className="space-y-6 flex-1 overflow-auto pr-2">
                             {/* Skill Bars */}
@@ -637,16 +667,16 @@ const App: React.FC = () => {
                     </div>
 
                     {/* Certificate Side */}
-                    <div id="certificate-container" className="flex-1 flex flex-col items-center justify-center border-[16px] border-double border-blue-900 p-10 relative bg-white shadow-inner">
+                    <div id="certificate-container" className="flex-1 flex flex-col items-center justify-center border-[10px] md:border-[16px] border-double border-blue-900 p-5 md:p-10 relative bg-white shadow-inner min-h-[620px]">
                         <div id="no-print" className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-blue-900 text-white px-6 py-2 rounded-full font-serif font-bold tracking-widest shadow-lg">
                             CERTIFICADO DE CONCLUSÃO
                         </div>
                         <Award size={100} className="text-yellow-500 mb-6 drop-shadow-md"/>
-                        <h1 className="text-5xl font-serif text-slate-900 font-bold mb-4 text-center">Parabéns, {inputUser}!</h1>
+                        <h1 className="text-3xl md:text-5xl font-serif text-slate-900 font-bold mb-4 text-center">Parabéns, {inputUser}!</h1>
                         <p className="text-slate-600 text-xl text-center mb-8 max-w-md">
                             Certificamos que o aluno completou com êxito o módulo prático de:
                         </p>
-                        <h2 className="text-4xl font-bold text-blue-900 mb-8 border-y-2 border-slate-200 py-6 text-center">Estudos Ecológicos & Dados Secundários</h2>
+                        <h2 className="text-2xl md:text-4xl font-bold text-blue-900 mb-8 border-y-2 border-slate-200 py-6 text-center">Estudos Ecológicos & Dados Secundários</h2>
                         <div className="flex gap-8 mt-auto w-full justify-center">
                            <div className="text-center">
                                <div className="h-px w-40 bg-black mb-2"></div>
@@ -654,7 +684,7 @@ const App: React.FC = () => {
                            </div>
                         </div>
                         
-                        <div id="no-print" className="absolute top-12 right-12 flex flex-col items-center gap-2 animate-pulse">
+                        <div id="no-print" className="absolute top-3 right-3 md:top-12 md:right-12 flex flex-col items-center gap-2 animate-pulse">
                              <button onClick={handlePrintCertificate} className="bg-green-600 text-white px-4 py-2 rounded font-bold shadow-lg flex items-center gap-2 hover:bg-green-700 transition-all">
                                 <Printer size={18}/> Baixar PDF
                              </button>
@@ -664,23 +694,26 @@ const App: React.FC = () => {
                 </div>
 
                 {/* Restart Button */}
-                <button id="no-print" onClick={handleRestart} className="fixed bottom-8 right-8 bg-blue-600 text-white px-6 py-3 rounded-full font-bold hover:bg-blue-700 shadow-xl flex items-center gap-2 z-50">
+                <button id="no-print" onClick={handleRestart} className="fixed bottom-4 right-4 md:bottom-8 md:right-8 bg-blue-600 text-white px-4 md:px-6 py-3 rounded-full font-bold hover:bg-blue-700 shadow-xl flex items-center gap-2 z-50">
                    <RotateCcw size={18}/> Reiniciar Simulação
+                </button>
+                <button id="no-print" onClick={() => setIsGameOver(false)} className="fixed bottom-4 left-4 md:bottom-8 md:left-8 bg-slate-800 text-white px-4 md:px-6 py-3 rounded-full font-bold hover:bg-slate-700 shadow-xl z-50">
+                   Continuar explorando
                 </button>
 
                 {/* Review Modal */}
                 {showReviewModal && (
                   <div id="no-print" className="absolute inset-0 bg-black/80 z-[100] flex items-center justify-center p-4">
-                      <div className="bg-white rounded-xl max-w-3xl w-full h-[80vh] overflow-y-auto p-8 animate-in zoom-in">
+                      <div className="bg-white rounded-xl max-w-4xl w-full h-[88vh] overflow-y-auto p-4 md:p-8 animate-in zoom-in">
                            <div className="flex justify-between items-center mb-6 border-b pb-4">
-                               <h2 className="text-2xl font-bold text-blue-900 flex items-center gap-2"><BookOpen/> Revisão Teórica: Estudos Ecológicos</h2>
+                               <h2 className="text-xl md:text-2xl font-bold text-blue-900 flex items-center gap-2"><BookOpen/> Livro de Revisão PIG</h2>
                                <button onClick={() => setShowReviewModal(false)}><XCircle size={24} className="text-slate-400 hover:text-red-500"/></button>
                            </div>
                            
                            <div className="space-y-8">
                                <section>
                                    <h3 className="font-bold text-lg text-slate-800 mb-2 border-l-4 border-blue-500 pl-2">1. Incidência vs. Prevalência</h3>
-                                   <div className="grid grid-cols-2 gap-4 text-sm text-slate-600">
+                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-slate-600">
                                        <div>
                                            <strong>Incidência (Casos Novos)</strong>
                                            <p>Mede o risco de adoecer. Usada em epidemias (Dengue) e doenças agudas.</p>
@@ -694,14 +727,14 @@ const App: React.FC = () => {
 
                                <section>
                                    <h3 className="font-bold text-lg text-slate-800 mb-2 border-l-4 border-green-500 pl-2">2. Critérios de Bradford Hill (Causalidade)</h3>
-                                   <p className="text-sm text-slate-600 mb-2">Para inferir que X causa Y, observamos 9 critérios. Os principais são:</p>
+                                   <p className="text-sm text-slate-600 mb-2">As considerações de Hill ajudam a discutir uma hipótese causal, mas não são uma lista automática de comprovação. Temporalidade é indispensável; o conjunto de evidências e o desenho do estudo importam.</p>
                                    <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
                                        <li><strong>Temporalidade (Essencial):</strong> A causa DEVE vir antes do efeito.</li>
-                                       <li><strong>Força de Associação:</strong> Quanto maior o RR/OR, mais provável ser causal.</li>
+                                       <li><strong>Força de associação:</strong> Associações grandes podem ser menos explicáveis por confundimento residual, mas força isolada não prova causalidade.</li>
                                        <li><strong>Gradiente Biológico:</strong> Maior exposição = Maior doença (Dose-resposta).</li>
                                        <li><strong>Plausibilidade:</strong> Faz sentido biológico?</li>
                                        <li><strong>Consistência:</strong> Outros estudos acharam o mesmo?</li>
-                                       <li><strong>Especificidade:</strong> Uma causa gera um efeito específico (Raro).</li>
+                                       <li><strong>Especificidade:</strong> Pode apoiar algumas hipóteses, mas muitas exposições têm vários efeitos e muitas doenças têm várias causas.</li>
                                    </ul>
                                </section>
 
@@ -710,17 +743,79 @@ const App: React.FC = () => {
                                    <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
                                        <li><strong>Quantitativas (Numéricas):</strong> Contínuas (Peso, Altura) ou Discretas (Nº de filhos).</li>
                                        <li><strong>Qualitativas (Categóricas):</strong> Nominais (Cor dos olhos, Sexo) ou Ordinais (Escolaridade, Estadiamento).</li>
-                                       <li><strong>No Gráfico:</strong> Eixo X = Independente (Causa). Eixo Y = Dependente (Efeito).</li>
+                                       <li><strong>No gráfico:</strong> O eixo X costuma representar a variável explicativa, exposição ou tempo; isso não a transforma automaticamente em causa. O eixo Y representa o desfecho ou resposta.</li>
                                    </ul>
                                </section>
 
-                               <section>
+                                <section>
                                    <h3 className="font-bold text-lg text-slate-800 mb-2 border-l-4 border-red-500 pl-2">4. Falácia Ecológica</h3>
                                    <p className="text-sm text-slate-600 leading-relaxed">
                                        É o erro de inferir que uma correlação encontrada no nível do grupo (população) se aplica necessariamente a cada indivíduo desse grupo.
                                        <br/><em>Exemplo: Se países com maior consumo de chocolate têm mais prêmios Nobel, não significa que comer chocolate te fará ganhar um Nobel. Pode ser que países ricos comam mais chocolate E invistam mais em ciência (Fator de Confusão: Renda).</em>
                                    </p>
-                               </section>
+                                </section>
+
+                                <section>
+                                    <h3 className="font-bold text-lg text-slate-800 mb-2 border-l-4 border-cyan-500 pl-2">5. PECO e estudo ecológico</h3>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-slate-600">
+                                        <div className="rounded-lg bg-slate-50 p-3"><strong>P — População</strong><p>Quais municípios, regiões ou períodos serão estudados?</p></div>
+                                        <div className="rounded-lg bg-slate-50 p-3"><strong>E — Exposição</strong><p>Qual característica agregada, política, indicador ou período será comparado?</p></div>
+                                        <div className="rounded-lg bg-slate-50 p-3"><strong>C — Comparador</strong><p>Qual grupo, território, categoria ou período de referência?</p></div>
+                                        <div className="rounded-lg bg-slate-50 p-3"><strong>O — Outcome (desfecho)</strong><p>Qual evento ou indicador de saúde será medido?</p></div>
+                                    </div>
+                                    <p className="mt-3 text-sm text-slate-600">No estudo ecológico, exposição e desfecho são medidos para grupos. É eficiente para tendências, comparações territoriais e geração de hipóteses, porém tem controle limitado de confundimento individual e não permite transportar automaticamente o achado para uma pessoa.</p>
+                                </section>
+
+                                <section>
+                                    <h3 className="font-bold text-lg text-slate-800 mb-2 border-l-4 border-emerald-500 pl-2">6. DATASUS: fonte, numerador e denominador</h3>
+                                    <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1.5">
+                                        <li><strong>SIM:</strong> mortalidade; <strong>SINASC:</strong> nascidos vivos; <strong>SINAN:</strong> agravos de notificação; <strong>SIH/SUS:</strong> internações financiadas pelo SUS.</li>
+                                        <li>Conte eventos no numerador e use uma população sob risco coerente no denominador. Informe multiplicador (por 1.000, 10.000 ou 100.000).</li>
+                                        <li>Confira definição de caso, local de residência/ocorrência, período, cobertura, duplicidades e mudanças de codificação.</li>
+                                        <li>Dados secundários podem ter atraso, subnotificação, erro de preenchimento e diferenças de cobertura. “Zero” pode significar ausência de registro, não ausência de doença.</li>
+                                    </ul>
+                                </section>
+
+                                <section className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                    <h3 className="font-bold text-lg text-slate-800 mb-2">Fontes confiáveis para continuar estudando</h3>
+                                    <p className="text-xs text-slate-500 mb-3">Links oficiais e leitura metodológica usados para revisar este material:</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                                        <a href="https://datasus.saude.gov.br/sistemas/" target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">DATASUS — catálogo de sistemas</a>
+                                        <a href="https://www.gov.br/conselho-nacional-de-saude/pt-br/acesso-a-informacao/atos-normativos/resolucoes/2022/resolucao-no-674.pdf/view" target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">CNS — Resolução nº 674/2022</a>
+                                        <a href="https://archive.cdc.gov/www_cdc_gov/csels/dsepd/ss1978/lesson2/section7.html" target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">CDC — intervalos de confiança</a>
+                                        <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC1291382/" target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">Considerações de Hill e inferência causal</a>
+                                    </div>
+                                </section>
+
+                                <section>
+                                    <h3 className="font-bold text-lg text-slate-800 mb-2 border-l-4 border-yellow-500 pl-2">7. Pearson, Spearman, p-valor e IC95%</h3>
+                                    <div className="space-y-2 text-sm text-slate-600">
+                                        <p><strong>Pearson (r):</strong> resume direção e intensidade de uma relação linear entre variáveis quantitativas, de −1 a +1. É sensível a valores extremos e não prova causalidade.</p>
+                                        <p><strong>Spearman (ρ):</strong> calcula a associação pelos postos; é útil para relações monotônicas, dados ordinais ou quando pressupostos do Pearson não são razoáveis.</p>
+                                        <p><strong>p-valor:</strong> mede quão incompatíveis os dados são com a hipótese nula, sob o modelo adotado. Não é a probabilidade de a hipótese ser verdadeira e não mede importância clínica.</p>
+                                        <p><strong>IC95%:</strong> mostra a precisão e a faixa de valores compatíveis com os dados e o método. Para correlação, o valor nulo é 0; para RR e OR, é 1.</p>
+                                    </div>
+                                </section>
+
+                                <section>
+                                    <h3 className="font-bold text-lg text-slate-800 mb-2 border-l-4 border-orange-500 pl-2">8. MBE, validade e leitura crítica</h3>
+                                    <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1.5">
+                                        <li>Transforme a dúvida em pergunta estruturada, busque evidência, avalie validade e aplicabilidade e integre-a à experiência clínica e aos valores do paciente.</li>
+                                        <li><strong>Viés</strong> é erro sistemático; <strong>confundimento</strong> ocorre quando um terceiro fator se associa à exposição e ao desfecho e distorce a relação.</li>
+                                        <li>Distinga significância estatística, tamanho de efeito, relevância clínica e aplicabilidade à população-alvo.</li>
+                                        <li>Prefira conclusões proporcionais ao delineamento: “houve associação” é diferente de “a exposição causou o desfecho”.</li>
+                                    </ul>
+                                </section>
+
+                                <section>
+                                    <h3 className="font-bold text-lg text-slate-800 mb-2 border-l-4 border-indigo-500 pl-2">9. Comunicação e integridade científica</h3>
+                                    <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1.5">
+                                        <li>O manuscrito deve permitir reprodução: pergunta, fonte, população, período, variáveis, análise, resultados e limitações precisam estar claros.</li>
+                                        <li>No banner, priorize legibilidade, hierarquia visual e poucos resultados essenciais; todo gráfico precisa de título, eixos, unidade e fonte.</li>
+                                        <li>Escolha periódico e congresso pelo escopo, público e transparência editorial — não apenas por prestígio ou promessa de rapidez.</li>
+                                        <li>No Lattes, registre cada produção na categoria e situação verdadeiras. Projeto em andamento, manuscrito aceito e artigo publicado não são equivalentes.</li>
+                                    </ul>
+                                </section>
                            </div>
                            
                            <button onClick={() => setShowReviewModal(false)} className="mt-8 w-full bg-slate-800 text-white py-3 rounded font-bold">Voltar ao Certificado</button>
@@ -739,8 +834,30 @@ const App: React.FC = () => {
 
       {popup && <EducationalPopup title={popup.title} content={popup.content} onClose={() => setPopup(null)} />}
 
+      {showFinishPrompt && (
+          <div className="absolute inset-0 z-[120] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl shadow-2xl max-w-xl w-full p-6 md:p-8 border-t-8 border-emerald-500 animate-in zoom-in">
+                  <div className="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-5">
+                      <Award size={34}/>
+                  </div>
+                  <h2 className="text-2xl font-black text-slate-900 mb-2">Portfólio acadêmico completo!</h2>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                      Projeto, artigo, banner e participação em congresso foram cadastrados no currículo simulado. Você pode emitir o certificado agora ou continuar explorando o Pigames, o Pigmail e os materiais de revisão.
+                  </p>
+                  <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <button onClick={() => setShowFinishPrompt(false)} className="px-4 py-3 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-50">
+                          Continuar explorando
+                      </button>
+                      <button onClick={() => { setShowFinishPrompt(false); setIsGameOver(true); }} className="px-4 py-3 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 shadow-lg">
+                          Finalizar e ver certificado
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
+
       {/* Desktop Icons */}
-      <div className="absolute top-4 left-4 flex flex-col gap-6 z-0">
+      <div className="absolute top-3 left-3 right-3 md:right-auto md:top-4 md:left-4 grid grid-cols-4 md:flex md:flex-col gap-3 md:gap-6 z-0">
          {[
              {id: AppID.GUIDE, icon: <BrainCircuit size={32} className="text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]"/>, label: "Chatbots IA"},
              {id: AppID.EXPLORER, icon: <Folder size={32} className="fill-yellow-400 text-yellow-500"/>, label: "Meus Arquivos"},
@@ -766,8 +883,8 @@ const App: React.FC = () => {
 
       {/* Mission Widget */}
       {showMissionWidget && currentScenario ? (
-          <div className="absolute top-4 right-4 z-0 max-h-[85vh] overflow-y-auto">
-               <div className="w-80 bg-slate-900/95 backdrop-blur-md border border-slate-700/60 rounded-2xl shadow-2xl p-4 animate-in slide-in-from-right-10 text-slate-100">
+          <div className="absolute top-24 md:top-4 left-2 right-2 md:left-auto md:right-4 z-20 md:z-0 max-h-[72vh] md:max-h-[85vh] overflow-y-auto">
+               <div className="w-full md:w-80 bg-slate-900/95 backdrop-blur-md border border-slate-700/60 rounded-2xl shadow-2xl p-4 animate-in slide-in-from-right-10 text-slate-100">
                    <div className="flex items-center gap-2 mb-2 border-b border-slate-800 pb-2">
                        <Briefcase size={15} className="text-yellow-400"/>
                        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest font-mono">Metas de Pesquisa</span>
@@ -778,8 +895,8 @@ const App: React.FC = () => {
                    <div className="space-y-2.5 text-[11px]">
                        {[
                            {
-                               title: "1. Pergunta Científica (PICO/PECO)",
-                               description: "Identificar desenho e formular a pergunta estruturada.",
+                               title: "1. Pergunta Científica (PECO)",
+                               description: "Definir P (População), E (Exposição), C (Comparador) e O (Desfecho).",
                                isDone: currentStep > EcologicalStep.PICO_FORMULATION,
                                isActive: currentStep === EcologicalStep.PICO_FORMULATION
                            },
@@ -804,14 +921,32 @@ const App: React.FC = () => {
                            {
                                title: "5. Relatório Científico (Pigword)",
                                description: "Abra o Pigword 📝, cole seus gráficos/tabelas da área de transferência e salve o manuscrito.",
-                               isDone: currentStep > EcologicalStep.WRITING,
-                               isActive: currentStep === EcologicalStep.WRITING && savedReferences.length >= 2
+                               isDone: fileSystem.some(file => file.type === 'doc'),
+                               isActive: currentStep === EcologicalStep.WRITING && savedReferences.length >= 2 && !fileSystem.some(file => file.type === 'doc')
                            },
                            {
-                               title: "6. Submissão (Journal Portal)",
-                               description: "Acesse o Portal de Periódicos 🚀 no navegador e envie seu manuscrito finalizado para a revista ideal.",
-                               isDone: currentStep > EcologicalStep.JOURNAL_SUBMISSION,
-                               isActive: currentStep === EcologicalStep.JOURNAL_SUBMISSION || currentStep === EcologicalStep.SUBMISSION
+                               title: "6. Parecer do Orientador (Pigmail)",
+                               description: currentStep === EcologicalStep.AWAITING_REVIEW ? "O manuscrito foi enviado. Aguarde a resposta e acompanhe a caixa de entrada do Pigmail." : "Envie o manuscrito pelo Pigmail e leia o parecer quando ele chegar.",
+                               isDone: currentStep >= EcologicalStep.BANNER_CREATION,
+                               isActive: currentStep === EcologicalStep.SUBMISSION || currentStep === EcologicalStep.AWAITING_REVIEW
+                           },
+                           {
+                               title: "7. Banner Científico",
+                               description: "Monte o banner com título, introdução, métodos, resultados, discussão, conclusão e referências.",
+                               isDone: bannerCompleted,
+                               isActive: currentStep === EcologicalStep.BANNER_CREATION
+                           },
+                           {
+                               title: "8. Publicação e Divulgação",
+                               description: currentStep === EcologicalStep.CONGRESS_SUBMISSION ? "O artigo foi aceito. Agora escolha um congresso compatível com o tema e o desenho." : "Escolha um periódico confiável e, depois do aceite, um congresso adequado.",
+                               isDone: currentStep > EcologicalStep.CONGRESS_SUBMISSION,
+                               isActive: currentStep === EcologicalStep.JOURNAL_SUBMISSION || currentStep === EcologicalStep.CONGRESS_SUBMISSION
+                           },
+                           {
+                               title: "9. Portfólio Lattes",
+                               description: "Cadastre projeto, artigo, banner e congresso. Você decide quando finalizar e emitir o certificado.",
+                               isDone: currentStep === EcologicalStep.COMPLETED,
+                               isActive: currentStep === EcologicalStep.LATTES_REGISTRATION
                            }
                        ].map((meta, index) => (
                            <div key={index} className={`p-2.5 rounded-xl border transition-all ${
@@ -857,14 +992,14 @@ const App: React.FC = () => {
                 icon={getAppIcon(win.id)}
               >
                   {win.id === AppID.GUIDE && <Tutor currentScenario={currentScenario} currentStep={currentStep} xp={xp} />}
-                  {win.id === AppID.BROWSER && <Browser onSaveFile={handleSaveFile} currentScenario={currentScenario} onEmailSend={handleEmailSend} fileSystem={fileSystem} emails={emails} onSaveReference={handleSaveReference} savedReferences={savedReferences} onLogAction={updateStats} onQuizComplete={(points) => setXp(p => p + points)} currentStep={currentStep} onJournalSubmit={handleJournalSubmissionSuccess} onCongressSuccess={handleCongressSuccess} onLattesSuccess={handleLattesSuccess} inputUser={inputUser}/>}
+                  {win.id === AppID.BROWSER && <Browser onSaveFile={handleSaveFile} currentScenario={currentScenario} onEmailSend={handleEmailSend} fileSystem={fileSystem} emails={emails} onSaveReference={handleSaveReference} savedReferences={savedReferences} onLogAction={updateStats} onQuizComplete={(points) => setXp(p => p + points)} currentStep={currentStep} onJournalSubmit={handleJournalSubmissionSuccess} onCongressSuccess={handleCongressSuccess} onLattesSuccess={handleLattesSuccess} inputUser={inputUser} bannerCompleted={bannerCompleted}/>}
                   {win.id === AppID.SHEET && <DataStudio fileSystem={fileSystem} setClipboard={setClipboard} onCopySuccess={handleCopySuccess} initialFile={fileToOpen} />}
-                  {win.id === AppID.WORD && <PaperWriter clipboard={clipboard} onSaveFile={handleSaveFile} savedReferences={savedReferences} />}
+                  {win.id === AppID.WORD && <PaperWriter clipboard={clipboard} onSaveFile={handleSaveFile} savedReferences={savedReferences} initialFile={fileToOpen?.type === 'doc' ? fileToOpen : null} onCloseDocument={() => setFileToOpen(null)} />}
                   {win.id === AppID.EXPLORER && <Explorer fileSystem={fileSystem} startPath={explorerStartPath} onOpenFile={handleOpenFileFromExplorer} onDeleteFile={handleDeleteFile} onRestoreFile={handleRestoreFile} />}
                   {win.id === AppID.SETTINGS && (
                       <div className="h-full bg-slate-900 text-white p-0 flex flex-col overflow-hidden relative font-mono">
                           <div className="absolute inset-0 bg-[url('https://cdn.pixabay.com/photo/2018/05/08/08/44/artificial-intelligence-3382507_1280.jpg')] bg-cover opacity-10"></div>
-                          <div className="p-8 z-10 flex-1 flex flex-col items-center justify-center text-center">
+                          <div className="p-5 md:p-8 z-10 flex-1 flex flex-col items-center justify-start md:justify-center text-center overflow-y-auto overscroll-contain">
                              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(59,130,246,0.5)] animate-pulse">
                                  <Cpu size={40} className="text-white"/>
                              </div>
@@ -894,7 +1029,7 @@ const App: React.FC = () => {
                           </div>
                       </div>
                   )}
-                  {win.id === AppID.BANNER && <BannerDesigner onFinish={() => handleEmailSend('BANNER_TRIGGER')}/>}
+                  {win.id === AppID.BANNER && <BannerDesigner onFinish={() => handleEmailSend('BANNER_FINISHED')}/>}
               </WindowFrame>
           ))}
       </div>
@@ -1023,12 +1158,12 @@ const App: React.FC = () => {
           </div>
       )}
 
-      {/* Phase 2: PICO Form */}
+      {/* Phase 2: PECO Form */}
       {currentScenario && currentStep === EcologicalStep.PICO_FORMULATION && !popup && (
           <div className="absolute inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center">
               <div className="bg-white rounded-2xl p-8 max-w-2xl w-full shadow-2xl animate-in zoom-in border-t-8 border-yellow-400 relative">
                   <div className="absolute -top-6 left-8 bg-yellow-400 text-blue-900 px-4 py-1 rounded-full font-bold text-sm shadow-md flex items-center gap-2">
-                      <Briefcase size={16}/> Fase 2: Estratégia PICO / PECO
+                      <Briefcase size={16}/> Fase 2: Estratégia PECO
                   </div>
                   <div className="flex justify-between items-start mb-6 mt-2">
                       <p className="text-sm text-slate-600">Defina os elementos da pesquisa para o tema <strong>"{currentScenario.title}"</strong>.</p>
@@ -1043,11 +1178,11 @@ const App: React.FC = () => {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs font-bold text-blue-800 mb-1">I (Intervenção) ou E (Exposição)</label>
+                                <label className="block text-xs font-bold text-blue-800 mb-1">E (Exposição populacional)</label>
                                 <input value={picoI} onChange={e=>setPicoI(e.target.value)} className="w-full border border-slate-300 p-3 rounded-lg text-sm focus:ring-2 ring-blue-200 outline-none" placeholder="Ex: Alta urbanização..."/>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-blue-800 mb-1">C (Comparação)</label>
+                                <label className="block text-xs font-bold text-blue-800 mb-1">C (Comparador)</label>
                                 <input value={picoC} onChange={e=>setPicoC(e.target.value)} className="w-full border border-slate-300 p-3 rounded-lg text-sm focus:ring-2 ring-blue-200 outline-none" placeholder="Ex: Baixa urbanização..."/>
                             </div>
                         </div>
@@ -1076,24 +1211,29 @@ const App: React.FC = () => {
           </div>
       )}
 
-      {/* PICO Tutorial Modal */}
+      {/* PECO Tutorial Modal */}
       {showPicoTutorial && (
           <div className="absolute inset-0 z-[70] bg-black/60 flex items-center justify-center p-4">
               <div className="bg-white rounded-xl max-w-lg w-full p-6 animate-in zoom-in">
                   <div className="flex justify-between mb-4">
-                      <h3 className="font-bold text-lg text-blue-900">Guia PICO vs PECO</h3>
+                      <h3 className="font-bold text-lg text-blue-900">Guia PECO para estudos ecológicos</h3>
                       <button onClick={() => setShowPicoTutorial(false)}><XCircle size={20} className="text-slate-400"/></button>
                   </div>
                   <div className="space-y-4 text-sm text-slate-700">
-                      <p>Em estudos ecológicos (baseados em dados secundários), nós geralmente não fazemos uma intervenção clínica (dar remédio). Nós observamos uma <strong>EXPOSIÇÃO</strong>.</p>
+                      <p><strong>PECO</strong> significa <strong>P (População)</strong>, <strong>E (Exposição)</strong>, <strong>C (Comparador)</strong> e <strong>O (Desfecho, do inglês Outcome)</strong>.</p>
+                      <p>Em estudos ecológicos com dados secundários, a unidade analisada é um grupo populacional — por exemplo, municípios ou regiões. Por isso, usamos <strong>E de Exposição</strong>, e não uma intervenção clínica aplicada individualmente.</p>
                       <div className="bg-blue-50 p-3 rounded border border-blue-100">
                           <strong className="block mb-1 text-blue-800">Exemplo Correto (Ecológico):</strong>
                           <ul className="list-disc pl-4 space-y-1">
-                              <li><strong>P:</strong> Municípios do Acre</li>
-                              <li><strong>E (Exposição):</strong> Expostos à fumaça de queimadas</li>
-                              <li><strong>C (Comparação):</strong> Não expostos (ou menos expostos)</li>
-                              <li><strong>O (Desfecho):</strong> Internações por Asma</li>
+                              <li><strong>P (População):</strong> municípios do Acre</li>
+                              <li><strong>E (Exposição):</strong> nível municipal de exposição à fumaça de queimadas</li>
+                              <li><strong>C (Comparador):</strong> municípios com menor nível de exposição</li>
+                              <li><strong>O (Desfecho/Outcome):</strong> taxa municipal de internações por asma</li>
                           </ul>
+                      </div>
+                      <div className="bg-amber-50 p-3 rounded border border-amber-200 text-amber-900">
+                          <strong className="block mb-1">Cuidado com a falácia ecológica</strong>
+                          Uma associação entre municípios não demonstra que cada indivíduo mais exposto terá o desfecho. A conclusão deve permanecer no nível populacional.
                       </div>
                       <div className="bg-red-50 p-3 rounded border border-red-100">
                           <strong className="block mb-1 text-red-800">Exemplo Errado (Clínico):</strong>
@@ -1106,15 +1246,15 @@ const App: React.FC = () => {
       )}
 
       {/* Taskbar */}
-      <div className="h-12 bg-slate-900/95 backdrop-blur text-white flex items-center px-4 z-50 gap-2 shadow-[0_-2px_10px_rgba(0,0,0,0.5)]">
+      <div className="h-12 bg-slate-900/95 backdrop-blur text-white flex items-center px-2 md:px-4 z-50 gap-1 md:gap-2 shadow-[0_-2px_10px_rgba(0,0,0,0.5)] overflow-x-auto overflow-y-hidden">
          <button onClick={() => setMenuOpen(!menuOpen)} className={`p-2 rounded transition-all ${menuOpen ? 'bg-white/20' : 'hover:bg-white/10'}`}><Monitor size={20}/></button>
          <div className="h-6 w-px bg-white/20 mx-2"></div>
          {(Object.values(windows) as WindowState[]).filter(w => w.isOpen).map(w => (
-             <button key={w.id} onClick={() => toggleWindow(w.id)} className={`h-9 px-3 rounded text-xs font-medium flex items-center gap-2 transition-all border-b-2 ${activeAppId === w.id && !w.isMinimized ? 'bg-white/10 border-blue-400' : 'hover:bg-white/5 border-transparent text-slate-300'}`}>
+             <button key={w.id} onClick={() => toggleWindow(w.id)} className={`h-9 px-2 md:px-3 rounded text-xs font-medium flex items-center gap-2 transition-all border-b-2 shrink-0 ${activeAppId === w.id && !w.isMinimized ? 'bg-white/10 border-blue-400' : 'hover:bg-white/5 border-transparent text-slate-300'}`}>
                  <div className="w-4 h-4 bg-white rounded flex items-center justify-center text-slate-900 font-bold text-[8px]">
                     {w.id.charAt(0).toUpperCase()}
                  </div> 
-                 <span className="max-w-[100px] truncate">{w.title}</span>
+                 <span className="hidden sm:inline max-w-[100px] truncate">{w.title}</span>
              </button>
          ))}
          <div className="flex-1"></div>
