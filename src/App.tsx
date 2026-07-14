@@ -524,7 +524,7 @@ const App: React.FC = () => {
           return [...withoutOldProducts,
               {
                   id: 'dashboard-sus', name: 'Dashboard_Municipal_SUS.doc', type: 'doc', folder: 'documents',
-                  content: { text: `DASHBOARD MUNICIPAL SUS\n\nIndicador: ${result.indicator}\nLinha de base: ${result.baseline}\nMeta: ${result.target}\n\nComponentes selecionados: ${result.dashboardCards.join(', ')}.\nModo final de visualização: ${result.dashboardMode === 'technical' ? 'técnico' : 'cidadão'}.\n\nALERTA DE QUALIDADE\nCompletude simulada de 82%. Interpretar as comparações com cautela e revisar os registros periodicamente.\n\nCADEIA LÓGICA\nAções: ${result.interventions.join(' + ')}\nProcesso: ${result.processIndicator}\nResultado: ${result.resultStatement}\nImpacto: ${result.impactStatement}` }, createdAt: new Date()
+                  content: { text: `DASHBOARD MUNICIPAL SUS\n\nIndicador: ${result.indicator}\nLinha de base: ${result.baseline}\nMeta: ${result.target}\nRecorte salvo: ${result.dashboardTerritory}, ano ${result.dashboardYear}.\n\nComponentes selecionados: ${result.dashboardCards.join(', ')}.\nModo final de visualização: ${result.dashboardMode === 'technical' ? 'técnico' : 'cidadão'}.\n\nALERTA DE QUALIDADE\nA completude varia conforme o período selecionado. Interpretar as comparações com cautela e revisar os registros periodicamente.\n\nCADEIA LÓGICA\nAções: ${result.interventions.join(' + ')}\nProcesso: ${result.processIndicator}\nResultado: ${result.resultStatement}\nImpacto: ${result.impactStatement}` }, createdAt: new Date()
               },
               {
                   id: 'produto-tecnico-sus', name: 'Nota_Tecnica_Plano_Municipal_Saude.doc', type: 'doc', folder: 'documents',
