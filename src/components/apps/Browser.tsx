@@ -175,6 +175,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
   
   // Custom tabs states
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [showSubscriptionNotice, setShowSubscriptionNotice] = useState(false);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [pigamesCategory, setPigamesCategory] = useState<string | null>(null);
   const [pigamesAnswered, setPigamesAnswered] = useState(false);
@@ -1458,11 +1459,11 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                                           <CheckCircle size={14}/> Inscrito (Sino Ativo 🔔)
                                       </span>
                                   ) : (
-                                      <button onClick={() => {
-                                          setIsSubscribed(true);
-                                          onQuizComplete(15);
-                                          alert("Obrigado por se inscrever no Mandic Talks! Você ganhou +15 XP e terá acesso a novas discussões médicas.");
-                                      }} className="bg-red-600 hover:bg-red-700 active:scale-95 transition-all text-white font-bold text-xs px-4 py-2 rounded-full cursor-pointer">
+                                       <button onClick={() => {
+                                           setIsSubscribed(true);
+                                           onQuizComplete(15);
+                                           setShowSubscriptionNotice(true);
+                                       }} className="bg-red-600 hover:bg-red-700 active:scale-95 transition-all text-white font-bold text-xs px-4 py-2 rounded-full cursor-pointer">
                                           Inscrever-se no Canal
                                       </button>
                                   )}
@@ -2029,7 +2030,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
   );
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="relative flex flex-col h-full bg-white">
       <div className="h-10 bg-slate-100 flex items-center px-3 gap-3 border-b border-slate-300 shadow-sm z-20">
         <div className="flex gap-2">
              <button onClick={handleBack} disabled={historyIndex <= 0} className="p-1.5 hover:bg-slate-200 rounded cursor-pointer text-slate-600 disabled:opacity-30"><ArrowLeft size={16}/></button>
@@ -2041,6 +2042,18 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
             <input value={inputUrl} readOnly className="flex-1 outline-none text-slate-700 cursor-default"/>
         </div>
       </div>
+      {showSubscriptionNotice && (
+          <div role="status" className="absolute top-12 right-3 left-3 sm:left-auto sm:w-96 z-50 rounded-xl border border-green-300 bg-white p-4 text-slate-800 shadow-2xl animate-in slide-in-from-top-2">
+              <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-green-100 p-2 text-green-700"><CheckCircle size={20}/></div>
+                  <div className="flex-1">
+                      <h3 className="text-sm font-bold text-green-900">Inscrição confirmada!</h3>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-600">Você se inscreveu no Mandic Talks, ativou o sino e recebeu +15 XP. O aviso fica dentro do jogo e não interrompe a tela cheia.</p>
+                  </div>
+                  <button aria-label="Fechar aviso" onClick={() => setShowSubscriptionNotice(false)} className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"><X size={16}/></button>
+              </div>
+          </div>
+      )}
       <div className="flex-1 overflow-hidden relative">
            {isLoading && (
                <div className="absolute top-0 left-0 w-full h-1 bg-slate-100 overflow-hidden z-30">

@@ -68,8 +68,6 @@ export const WindowFrame = ({
     };
   }, [isDragging, onMove]);
 
-  if (!windowState.isOpen) return null;
-
   // If maximized, occupy full viewport below topbar or general container
   const windowStyles: React.CSSProperties = isMobile
     ? {
@@ -79,7 +77,7 @@ export const WindowFrame = ({
         width: '100%',
         height: 'calc(100dvh - 48px)',
         zIndex: windowState.zIndex,
-        display: windowState.isMinimized ? 'none' : 'flex',
+        display: !windowState.isOpen || windowState.isMinimized ? 'none' : 'flex',
         flexDirection: 'column',
         pointerEvents: 'auto',
       }
@@ -91,7 +89,7 @@ export const WindowFrame = ({
         width: '100%',
         height: 'calc(100vh - 40px)', // adjusted for taskbar/system bar if any
         zIndex: windowState.zIndex,
-        display: windowState.isMinimized ? 'none' : 'flex',
+        display: !windowState.isOpen || windowState.isMinimized ? 'none' : 'flex',
         flexDirection: 'column',
         pointerEvents: 'auto',
       }
@@ -102,7 +100,7 @@ export const WindowFrame = ({
         width: typeof windowState.size.width === 'number' ? `${windowState.size.width}px` : windowState.size.width,
         height: typeof windowState.size.height === 'number' ? `${windowState.size.height}px` : windowState.size.height,
         zIndex: windowState.zIndex,
-        display: windowState.isMinimized ? 'none' : 'flex',
+        display: !windowState.isOpen || windowState.isMinimized ? 'none' : 'flex',
         flexDirection: 'column',
         pointerEvents: 'auto',
       };
