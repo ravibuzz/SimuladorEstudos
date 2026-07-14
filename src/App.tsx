@@ -173,7 +173,7 @@ const REVIEW_SOURCE_GROUPS = [
     {
         title: 'Planejamento e gestão do SUS',
         links: [
-            { label: 'Ministério da Saúde — Guia PMS 2026–2029', description: 'Guia prático com análise situacional, SWOT/FOFA, árvore de problemas, GUT, metas e indicadores.', url: 'https://www.gov.br/saude/pt-br/centrais-de-conteudo/publicacoes/guias-e-manuais/2025/guia-pratico-de-elaboracao-de-plano-municipal-de-saude-2026-2029.pdf' },
+            { label: 'Ministério da Saúde — Guia PMS 2026–2029', description: 'Guia prático com análise situacional, SWOT/FOFA, árvore de problemas, GUT, metas e indicadores.', url: 'https://www.gov.br/saude/pt-br/centrais-de-conteudo/publicacoes/guias-e-manuais/2025/guia-pratico-de-elaboracao-de-plano-municipal-de-saude-2026-2029.pdf/@@download/file/Guia%20Pr%C3%A1tico%20de%20Elabora%C3%A7%C3%A3o%20de%20Plano%20Municipal%20de%20Sa%C3%BAde%202026-2029.pdf' },
             { label: 'Instrumentos de Planejamento do SUS', description: 'Plano de Saúde, Programação Anual, relatórios quadrimestrais e Relatório Anual de Gestão.', url: 'https://www.gov.br/saude/pt-br/acesso-a-informacao/gestao-do-sus/instrumentos-de-planejamento' },
             { label: 'DigiSUS Gestor — acesso público', description: 'Consulta pública aos instrumentos de planejamento, metas e indicadores de estados e municípios.', url: 'https://digisusgmp.saude.gov.br/' },
             { label: 'DATASUS — Informações de Saúde', description: 'Dados para análise da situação sanitária e apoio à tomada de decisão baseada em evidências.', url: 'https://datasus.saude.gov.br/informacoes-de-saude-tabnet/' },
