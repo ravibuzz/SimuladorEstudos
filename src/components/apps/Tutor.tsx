@@ -43,7 +43,7 @@ const STEP_GUIDES: Record<EcologicalStep, string[]> = {
   ],
   [EcologicalStep.WRITING]: [
     "Dicas para redigir a Introdução científica.",
-    "O que deve constar na seção de Metodologia?",
+    "Como evitar plágio ao parafrasear e citar fontes?",
     "Como declarar com transparência o uso de IA na pesquisa?"
   ],
   [EcologicalStep.SUBMISSION]: [
@@ -76,10 +76,15 @@ const STEP_GUIDES: Record<EcologicalStep, string[]> = {
     "Qual a diferença entre artigo aceito e artigo publicado?",
     "Por que devo manter o currículo atualizado sem duplicar produções?"
   ],
+  [EcologicalStep.HEALTH_MANAGEMENT]: [
+    "Como o Plano Municipal de Saúde transforma indicadores em metas?",
+    "Qual a diferença entre SWOT/FOFA, Ishikawa e matriz GUT?",
+    "Como formular uma meta SMART e um plano de monitoramento?"
+  ],
   [EcologicalStep.COMPLETED]: [
-    "Parabéns pelo encerramento! O que é o Currículo Lattes?",
-    "Como registrar minhas publicações no Lattes?",
-    "Qual o próximo passo na minha carreira acadêmica?"
+    "Como aplicar epidemiologia à gestão do SUS?",
+    "Como transformar a nota técnica em um projeto real?",
+    "Qual o próximo passo na minha carreira acadêmica e na saúde pública?"
   ]
 };
 
@@ -261,7 +266,7 @@ export const Tutor: React.FC<TutorProps> = ({ currentScenario, currentStep, xp }
           </div>
         </div>
         <div className="bg-slate-800 text-[9px] font-bold px-2 py-0.5 rounded text-slate-300 border border-slate-700">
-          Etapa {currentStep + 1}/11
+          Etapa {currentStep + 1}/14
         </div>
       </div>
 

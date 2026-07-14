@@ -1588,6 +1588,48 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
               ],
               correctIdx: 0,
               explanation: "Excelente! A sequência mantém o processo centrado nas pessoas: compreender o contexto, definir o problema, criar alternativas e testar soluções de forma iterativa."
+          },
+          {
+              id: "q9",
+              category: "Gestão SUS: Matriz SWOT/FOFA",
+              mechanic: "CLASSIFICAÇÃO",
+              question: "Uma Secretaria Municipal tem equipe de vigilância qualificada, prontuários desatualizados, parceria oferecida por uma universidade e risco de redução de repasses. Qual classificação SWOT está correta?",
+              options: [
+                  "Equipe = força; prontuários = fraqueza; parceria = oportunidade; redução de repasses = ameaça.",
+                  "Equipe = oportunidade; prontuários = ameaça; parceria = força; redução de repasses = fraqueza.",
+                  "Todos são fatores internos, porque afetam o município.",
+                  "Todos são ameaças, porque exigem decisões da gestão."
+              ],
+              correctIdx: 0,
+              explanation: "Na SWOT/FOFA, forças e fraquezas são internas; oportunidades e ameaças vêm do ambiente externo. O Guia do Plano Municipal de Saúde recomenda usar essa leitura para apoiar a análise situacional."
+          },
+          {
+              id: "q10",
+              category: "Gestão SUS: Diagrama de Ishikawa",
+              mechanic: "DIAGNÓSTICO DE CAUSAS",
+              question: "As notificações chegam atrasadas. Qual uso do Ishikawa é mais adequado?",
+              options: [
+                  "Escolher imediatamente um profissional para responsabilizar pelo problema.",
+                  "Organizar causas potenciais em categorias — pessoas, processos, tecnologia, materiais e território — e verificar quais são sustentadas por evidências.",
+                  "Usar o diagrama para provar que uma causa isolada explica todos os atrasos.",
+                  "Substituir indicadores e a análise de dados por uma sessão de opiniões."
+              ],
+              correctIdx: 1,
+              explanation: "O Ishikawa ajuda a estruturar hipóteses causais e evitar explicações simplistas. As causas levantadas ainda precisam ser verificadas; a ferramenta não prova causalidade nem deve ser usada para procurar culpados."
+          },
+          {
+              id: "q11",
+              category: "Gestão SUS: Priorização GUT",
+              mechanic: "DECISÃO SOB PRESSÃO",
+              question: "Três problemas receberam notas de Gravidade, Urgência e Tendência: A = 5×4×5; B = 4×3×3; C = 3×2×2. Pelo produto G×U×T, qual tem maior prioridade inicial?",
+              options: [
+                  "Problema A, com 100 pontos.",
+                  "Problema B, com 36 pontos.",
+                  "Problema C, com 12 pontos.",
+                  "Todos empatam, porque a matriz não utiliza multiplicação."
+              ],
+              correctIdx: 0,
+              explanation: "A matriz GUT gera uma ordenação inicial: A soma 100 pontos e deve ser analisado primeiro. A pontuação apoia, mas não substitui participação social, equidade, viabilidade e julgamento técnico."
           }
       ];
 

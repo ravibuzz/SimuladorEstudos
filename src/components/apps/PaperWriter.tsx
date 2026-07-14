@@ -41,6 +41,8 @@ export const PaperWriter: React.FC<PaperWriterProps> = ({ clipboard, onSaveFile,
   const [resultCI, setResultCI] = useState('');
   const [discussionLimit, setDiscussionLimit] = useState('');
   const [publicHealthImpact, setPublicHealthImpact] = useState('');
+  const [citationPractice, setCitationPractice] = useState('');
+  const [integrityConfirmed, setIntegrityConfirmed] = useState(false);
 
   const [attachments, setAttachments] = useState<Attachments>({ chart: null, table: null });
   const [isSaving, setIsSaving] = useState(false);
@@ -98,6 +100,8 @@ export const PaperWriter: React.FC<PaperWriterProps> = ({ clipboard, onSaveFile,
       if (!discussionConnector) errors.push("Discussão: Falta o conector de argumentação");
       if (!discussionLimit) errors.push("Discussão: Falta citar a limitação do estudo");
       if (!publicHealthImpact) errors.push("Conclusão: Falta propor intervenção em Saúde Pública");
+      if (citationPractice !== 'cite') errors.push("Integridade: Revise como parafrasear e citar uma ideia de outro autor");
+      if (!integrityConfirmed) errors.push("Integridade: Confirme a correspondência entre citações e referências");
       
       // Educational Validation
       if (methodsDesign && methodsDesign !== 'ecologico') {
@@ -424,12 +428,37 @@ export const PaperWriter: React.FC<PaperWriterProps> = ({ clipboard, onSaveFile,
                                 />
                             </div>
 
+                            <div className="rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm">
+                                <strong className="mb-2 block text-xs font-bold uppercase text-violet-900">Oficina de citações e prevenção do plágio</strong>
+                                <p className="mb-3 text-xs leading-relaxed text-violet-950">
+                                    Você compreendeu uma ideia de um artigo e a reescreveu com suas próprias palavras. Qual é a conduta correta?
+                                </p>
+                                <select value={citationPractice} onChange={event => setCitationPractice(event.target.value)} className={`w-full rounded-lg border bg-white p-2 text-xs ${validationError && citationPractice !== 'cite' ? 'border-red-500' : 'border-violet-200'}`}>
+                                    <option value="">Selecione...</option>
+                                    <option value="none">Não citar, porque as palavras agora são minhas</option>
+                                    <option value="quote">Usar aspas, mesmo sem reproduzir literalmente o texto</option>
+                                    <option value="cite">Parafrasear fielmente, citar a fonte no texto e incluí-la nas referências</option>
+                                </select>
+                                {citationPractice && (
+                                    <p className={`mt-2 rounded-lg p-2 text-xs leading-relaxed ${citationPractice === 'cite' ? 'bg-emerald-100 text-emerald-900' : 'bg-red-100 text-red-900'}`}>
+                                        {citationPractice === 'cite'
+                                            ? 'Correto. A ideia continua pertencendo à fonte. Citação direta exige fidelidade, aspas e página quando aplicável; paráfrase também exige crédito.'
+                                            : 'Ainda há risco de plágio. Trocar palavras ou reorganizar frases não elimina a obrigação de reconhecer a fonte da ideia.'}
+                                    </p>
+                                )}
+                                <label className="mt-3 flex items-start gap-2 rounded-lg bg-white p-3 text-xs leading-relaxed text-slate-700">
+                                    <input type="checkbox" checked={integrityConfirmed} onChange={event => setIntegrityConfirmed(event.target.checked)} className="mt-0.5 accent-violet-600"/>
+                                    <span>Conferi se cada citação corresponde à fonte realmente lida, se toda fonte citada aparece nas referências e se não reutilizei texto próprio anterior sem indicação.</span>
+                                </label>
+                                <p className="mt-2 text-[11px] leading-relaxed text-violet-800"><strong>Atenção:</strong> um verificador de similaridade é apenas apoio. Ele não comprova sozinho a existência nem a ausência de plágio; a responsabilidade permanece com os autores.</p>
+                            </div>
+
                             <div className="bg-blue-50 p-4 rounded border border-blue-200 text-sm mt-4">
-                                <strong className="block text-blue-800 mb-2 text-xs uppercase font-bold">Declaração Regulamentar (Portaria CNPq nº 2.664/2026)</strong>
+                                <strong className="block text-blue-800 mb-2 text-xs uppercase font-bold">Transparência no uso de inteligência artificial</strong>
                                 <div className="flex items-start gap-2">
                                     <input type="checkbox" id="ai-declaration" required defaultChecked disabled className="mt-1" />
                                     <label htmlFor="ai-declaration" className="text-xs text-blue-950 leading-relaxed">
-                                        Declaro conformidade com a <strong>Portaria CNPq nº 2.664/2026</strong>. O uso de Inteligência Artificial Generativa neste simulador acadêmico foi estritamente declarado para fins de estruturação textual e auxílio metodológico.
+                                        Nesta simulação, o uso de IA foi declarado como apoio à estruturação textual e metodológica. Os autores continuam responsáveis por verificar fatos, fontes, citações, autoria e conteúdo final, conforme as diretrizes de integridade do CNPq e as regras do periódico.
                                     </label>
                                 </div>
                             </div>
@@ -546,9 +575,9 @@ export const PaperWriter: React.FC<PaperWriterProps> = ({ clipboard, onSaveFile,
                                Conclui-se que há uma relevância epidemiológica no tema abordado, demandando novos estudos analíticos.
                            </p>
 
-                           <h3 className="font-bold uppercase text-xs tracking-wider mb-2 border-b border-black pb-1">Uso de IA (Portaria CNPq nº 2.664/2026)</h3>
+                           <h3 className="font-bold uppercase text-xs tracking-wider mb-2 border-b border-black pb-1">Transparência no uso de IA</h3>
                            <p className="mb-4 text-xs text-slate-600 italic">
-                               O uso de inteligência artificial generativa nesta simulação acadêmica foi devidamente declarado conforme O Conselho Nacional de Desenvolvimento Científico e Tecnológico (CNPq) instituiu a Portaria nº 2.664/2026, que regulamenta o uso de Inteligência Artificial Generativa na pesquisa acadêmica. O simulador atuou exclusivamente como facilitador metodológico e estruturador textual de autoria humana.
+                               Nesta simulação acadêmica, ferramentas de inteligência artificial foram utilizadas como apoio metodológico e de estruturação textual. Os autores revisaram o conteúdo e permanecem responsáveis por sua exatidão, integridade, fontes e redação final.
                            </p>
 
                            <h3 className="font-bold uppercase text-xs tracking-wider mb-2 border-b border-black pb-1">Referências</h3>
@@ -623,6 +652,7 @@ export const PaperWriter: React.FC<PaperWriterProps> = ({ clipboard, onSaveFile,
                       <>
                         <ScanSearch size={48} className="animate-pulse text-purple-600 mb-4"/>
                         <h3 className="font-bold text-slate-700 mb-1">Verificando Originalidade...</h3>
+                        <p className="mt-2 text-center text-[11px] leading-relaxed text-slate-500">Triagem de similaridade não substitui a revisão das citações nem determina plágio sozinha.</p>
                         <div className="w-full bg-slate-200 h-2 rounded-full mt-4 overflow-hidden">
                             <div className="h-full bg-purple-600 animate-[shimmer_1s_infinite] w-full"></div>
                         </div>
