@@ -96,7 +96,7 @@ const SCENARIOS: Scenario[] = [
     },
     {
         id: 'infant_mortality',
-        title: 'Dossiê SIM-Infância: Desigualdade Socioeconômica e Mortalidade Infantil Regional',
+        title: 'Dossiê SIM-Infância: Desigualdade e Mortalidade Infantil',
         description: 'Analise se regiões com menor renda possuem maior mortalidade infantil.',
         objective: 'Identificar tendências de óbitos em menores de 1 ano.',
         correctSystem: 'SIM',
@@ -443,6 +443,75 @@ const App: React.FC = () => {
       return { methodScore, ethicsScore, statsScore };
   }
 
+  const buildPersonalizedDebrief = () => {
+      const strengths: string[] = [];
+      const reviewPoints: string[] = [];
+      const reviewPlan: string[] = [];
+
+      if (gameStats.wrongDesignChoices === 0) {
+          strengths.push('Você reconheceu de primeira que dados agregados por local e período pedem um desenho ecológico.');
+      } else {
+          reviewPoints.push(`Você precisou de ${gameStats.wrongDesignChoices} nova(s) tentativa(s) para escolher o desenho. Revise unidade de análise, dados agregados e falácia ecológica.`);
+          reviewPlan.push('Compare estudo ecológico, transversal, caso-controle e coorte, identificando a unidade de análise de cada um.');
+      }
+
+      if (gameStats.picoRetries === 0) {
+          strengths.push('Sua pergunta PECO ficou coerente na primeira validação, com população, exposição, comparação e desfecho alinhados.');
+      } else {
+          reviewPoints.push(`A pergunta PECO exigiu ${gameStats.picoRetries} revisão(ões). Reforce a função de P, E, C e O e mantenha todos os elementos no nível populacional.`);
+          reviewPlan.push('Reescreva a pergunta do dossiê marcando explicitamente P (População), E (Exposição), C (Comparação) e O (Outcome/Desfecho).');
+      }
+
+      if (gameStats.badSearchQueries === 0) {
+          strengths.push('Você construiu buscas bibliográficas focadas, sem registrar consultas inadequadas.');
+      } else {
+          reviewPoints.push(`Foram registradas ${gameStats.badSearchQueries} busca(s) pouco específica(s). Revise descritores, sinônimos e os operadores AND/OR.`);
+          reviewPlan.push('Monte uma estratégia em blocos: sinônimos unidos por OR e conceitos diferentes unidos por AND.');
+      }
+
+      if (gameStats.quizMistakes === 0) {
+          strengths.push('Você respondeu aos testes de bioestatística sem erros registrados.');
+      } else {
+          reviewPoints.push(`Você cometeu ${gameStats.quizMistakes} erro(s) nos testes. Retome correlação, valor de p, intervalo de confiança e interpretação sem linguagem causal.`);
+          reviewPlan.push('Refaça os exemplos do livro sobre Pearson, valor de p e intervalo de confiança, explicando cada resultado em uma frase.');
+      }
+
+      if (!gameStats.predatorySubmission) {
+          strengths.push('Você conduziu a escolha do periódico sem avançar por uma opção predatória.');
+      } else {
+          reviewPoints.push('Você chegou a considerar uma revista predatória. Verifique transparência editorial, revisão por pares, indexação e taxas antes de submeter.');
+          reviewPlan.push('Use a lista de sinais de alerta do livro para comparar um periódico confiável com um periódico predatório.');
+      }
+
+      if (savedReferences.length >= 2) {
+          strengths.push(`Você reuniu ${savedReferences.length} referências e construiu uma base bibliográfica para o manuscrito.`);
+      } else {
+          reviewPoints.push('Sua base bibliográfica ficou pequena. Uma discussão científica precisa dialogar com estudos relevantes e atuais.');
+          reviewPlan.push('Amplie a busca e selecione referências que sustentem a introdução, o método e a comparação dos resultados.');
+      }
+
+      if (fileSystem.some(file => file.type === 'doc')) {
+          strengths.push('Você concluiu e salvou o manuscrito, transformando análise em comunicação científica estruturada.');
+      }
+
+      if (bannerCompleted) {
+          strengths.push('Você também sintetizou o estudo em um banner científico completo.');
+      }
+
+      if (strengths.length === 0) {
+          strengths.push('Você percorreu todas as etapas e concluiu o ciclo da pesquisa, da pergunta à divulgação científica.');
+      }
+
+      if (reviewPlan.length === 0) {
+          reviewPlan.push('Avance para temas de maior complexidade: confundimento, viés, falácia ecológica e limites da inferência causal.');
+          reviewPlan.push('Releia os nove aspectos de Bradford Hill como apoio ao raciocínio causal, sem tratá-los como uma lista de prova de causalidade.');
+      }
+
+      reviewPlan.push('Ao interpretar o seu estudo, diferencie associação estatística, relevância epidemiológica e causalidade.');
+
+      return { strengths, reviewPoints, reviewPlan };
+  };
+
   // Dynamic desktop shortcut indicator to guide user next steps
   const getShortcutGlow = (id: AppID) => {
     if (currentStep === EcologicalStep.DATA_COLLECTION && id === AppID.BROWSER) {
@@ -545,6 +614,7 @@ const App: React.FC = () => {
   };
 
   const { methodScore, ethicsScore, statsScore } = calculateSkills();
+  const finalDebrief = buildPersonalizedDebrief();
 
   // --- Render ---
 
@@ -651,14 +721,37 @@ const App: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
-                                <h3 className="font-bold text-xs uppercase tracking-wider text-yellow-700 mb-2 flex items-center gap-2"><Lightbulb size={14}/> Feedback do Tutor</h3>
-                                <ul className="space-y-2 text-xs text-slate-700">
-                                    {gameStats.predatorySubmission && <li className="flex items-start gap-2 text-red-600">• Cuidado: Você quase publicou em revista predatória!</li>}
-                                    {gameStats.wrongDesignChoices > 0 && <li className="flex items-start gap-2">• Lembre-se: Ecológico = Dados Agregados.</li>}
-                                    {gameStats.badSearchQueries > 0 && <li className="flex items-start gap-2">• Use operadores booleanos (AND/OR) no PubMed.</li>}
-                                    <li className="flex items-start gap-2 text-green-600">• Você completou o ciclo da pesquisa com sucesso!</li>
-                                </ul>
+                            <div className="space-y-3" aria-label="Debriefing personalizado da partida">
+                                <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
+                                    <h3 className="font-bold text-xs uppercase tracking-wider text-emerald-800 mb-2 flex items-center gap-2"><CheckCircle size={14}/> Decisões bem executadas</h3>
+                                    <ul className="space-y-2 text-xs leading-relaxed text-slate-700">
+                                        {finalDebrief.strengths.map((item, index) => (
+                                            <li key={`strength-${index}`} className="flex items-start gap-2"><span className="text-emerald-600 font-bold">✓</span><span>{item}</span></li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                                    <h3 className="font-bold text-xs uppercase tracking-wider text-amber-800 mb-2 flex items-center gap-2"><AlertTriangle size={14}/> O que revisar</h3>
+                                    {finalDebrief.reviewPoints.length > 0 ? (
+                                        <ul className="space-y-2 text-xs leading-relaxed text-slate-700">
+                                            {finalDebrief.reviewPoints.map((item, index) => (
+                                                <li key={`review-${index}`} className="flex items-start gap-2"><span className="text-amber-600 font-bold">!</span><span>{item}</span></li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <p className="text-xs leading-relaxed text-slate-700">Nenhum erro crítico foi registrado. Seu próximo passo é aprofundar as limitações e evitar interpretações causais indevidas.</p>
+                                    )}
+                                </div>
+
+                                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                    <h3 className="font-bold text-xs uppercase tracking-wider text-blue-800 mb-2 flex items-center gap-2"><Lightbulb size={14}/> Plano de revisão recomendado</h3>
+                                    <ol className="space-y-2 text-xs leading-relaxed text-slate-700">
+                                        {finalDebrief.reviewPlan.map((item, index) => (
+                                            <li key={`plan-${index}`} className="flex items-start gap-2"><span className="text-blue-700 font-bold">{index + 1}.</span><span>{item}</span></li>
+                                        ))}
+                                    </ol>
+                                </div>
                             </div>
                         </div>
                         <button onClick={() => setShowReviewModal(true)} className="mt-4 w-full bg-indigo-600 text-white py-2 rounded font-bold hover:bg-indigo-700 shadow flex items-center justify-center gap-2">
@@ -728,14 +821,18 @@ const App: React.FC = () => {
                                <section>
                                    <h3 className="font-bold text-lg text-slate-800 mb-2 border-l-4 border-green-500 pl-2">2. Critérios de Bradford Hill (Causalidade)</h3>
                                    <p className="text-sm text-slate-600 mb-2">As considerações de Hill ajudam a discutir uma hipótese causal, mas não são uma lista automática de comprovação. Temporalidade é indispensável; o conjunto de evidências e o desenho do estudo importam.</p>
-                                   <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
-                                       <li><strong>Temporalidade (Essencial):</strong> A causa DEVE vir antes do efeito.</li>
-                                       <li><strong>Força de associação:</strong> Associações grandes podem ser menos explicáveis por confundimento residual, mas força isolada não prova causalidade.</li>
-                                       <li><strong>Gradiente Biológico:</strong> Maior exposição = Maior doença (Dose-resposta).</li>
-                                       <li><strong>Plausibilidade:</strong> Faz sentido biológico?</li>
-                                       <li><strong>Consistência:</strong> Outros estudos acharam o mesmo?</li>
-                                       <li><strong>Especificidade:</strong> Pode apoiar algumas hipóteses, mas muitas exposições têm vários efeitos e muitas doenças têm várias causas.</li>
-                                   </ul>
+                                   <ol className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-slate-600">
+                                       <li className="rounded-lg bg-slate-50 p-3"><strong>1. Força da associação:</strong> associações grandes podem ser menos explicáveis por alguns vieses, mas uma associação forte, sozinha, não demonstra causa.</li>
+                                       <li className="rounded-lg bg-slate-50 p-3"><strong>2. Consistência:</strong> resultados semelhantes em populações, locais, épocas e métodos diferentes fortalecem a interpretação.</li>
+                                       <li className="rounded-lg bg-slate-50 p-3"><strong>3. Especificidade:</strong> uma exposição ligada a um desfecho específico pode apoiar a hipótese, embora muitas doenças sejam multicausais.</li>
+                                       <li className="rounded-lg border border-green-200 bg-green-50 p-3"><strong>4. Temporalidade — indispensável:</strong> a exposição precisa ocorrer antes do desfecho. É a única consideração obrigatória para causalidade.</li>
+                                       <li className="rounded-lg bg-slate-50 p-3"><strong>5. Gradiente biológico:</strong> mudanças no nível de exposição acompanhadas por mudanças no desfecho podem sugerir dose–resposta; nem toda relação causal é linear.</li>
+                                       <li className="rounded-lg bg-slate-50 p-3"><strong>6. Plausibilidade:</strong> a relação deve ser compatível com conhecimentos biológicos, clínicos ou sociais disponíveis, que podem evoluir.</li>
+                                       <li className="rounded-lg bg-slate-50 p-3"><strong>7. Coerência:</strong> a interpretação não deve contradizer, sem boa explicação, a história natural da doença e o conjunto de evidências.</li>
+                                       <li className="rounded-lg bg-slate-50 p-3"><strong>8. Experimento:</strong> reduzir ou remover a exposição e observar mudança no desfecho pode apoiar causalidade quando a experimentação é possível e ética.</li>
+                                       <li className="rounded-lg bg-slate-50 p-3 md:col-span-2"><strong>9. Analogia:</strong> relações causais semelhantes já conhecidas podem tornar a hipótese mais plausível, mas oferecem apoio fraco quando usadas isoladamente.</li>
+                                   </ol>
+                                   <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"><strong>Como usar:</strong> avalie explicações alternativas, vieses, confundimento, precisão e desenho do estudo. As nove considerações orientam o raciocínio; não funcionam como pontuação ou checklist capaz de “provar” causalidade.</p>
                                </section>
 
                                <section>
@@ -1036,14 +1133,14 @@ const App: React.FC = () => {
 
       {/* ... (Onboarding/Phase 1/Phase 2 Modals Remain Unchanged) ... */}
       {!currentScenario && showOnboarding && (
-          <div className="absolute inset-0 z-[60] bg-slate-950/98 backdrop-blur-md flex items-center justify-center p-8 animate-in fade-in duration-300">
-              <div className="w-full max-w-6xl">
-                  <div className="flex items-center gap-5 mb-8 border-b border-slate-800 pb-6">
+          <div className="absolute inset-0 z-[60] bg-slate-950/98 backdrop-blur-md flex items-start md:items-center justify-center p-4 md:p-8 overflow-y-auto animate-in fade-in duration-300">
+              <div className="w-full max-w-6xl py-4 md:py-0">
+                   <div className="flex items-start md:items-center gap-3 md:gap-5 mb-6 md:mb-8 border-b border-slate-800 pb-5 md:pb-6">
                       <div className="bg-gradient-to-br from-yellow-400 to-amber-500 p-3 rounded-2xl text-slate-950 shadow-lg shadow-yellow-500/10">
                         <Briefcase size={32} className="stroke-[2.5]" />
                       </div>
                       <div>
-                        <h2 className="text-3xl font-extrabold text-white tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">Dossiês de Protocolos de Pesquisa</h2>
+                         <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">Dossiês de Protocolos de Pesquisa</h2>
                         <p className="text-slate-400 text-sm font-light mt-1">Selecione um protocolo epidemiológico para iniciar sua investigação com dados secundários agregados.</p>
                       </div>
                   </div>
@@ -1060,7 +1157,7 @@ const App: React.FC = () => {
                               <div 
                                   key={s.id} 
                                   onClick={() => handleScenarioSelect(s)} 
-                                  className="bg-slate-900/60 border border-slate-800 hover:border-yellow-500/50 hover:bg-slate-900/90 p-6 rounded-2xl cursor-pointer group transition-all duration-300 flex flex-col h-[400px] hover:-translate-y-2 shadow-2xl relative overflow-hidden"
+                                  className="bg-slate-900/60 border border-slate-800 hover:border-yellow-500/50 hover:bg-slate-900/90 p-6 rounded-2xl cursor-pointer group transition-all duration-300 flex flex-col min-h-[360px] md:h-[400px] hover:-translate-y-2 shadow-2xl relative overflow-hidden"
                               >
                                   {/* Top Accent line */}
                                   <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 opacity-60 group-hover:opacity-100 transition-opacity"></div>
@@ -1072,7 +1169,7 @@ const App: React.FC = () => {
                                       <span className="text-[10px] text-slate-500 font-mono">Dossiê {s.id.toUpperCase()}</span>
                                   </div>
 
-                                  <h3 className="font-bold text-base text-white group-hover:text-yellow-400 transition-colors leading-snug line-clamp-3 mb-3">
+                                  <h3 className="font-bold text-base text-white group-hover:text-yellow-400 transition-colors leading-snug min-h-[4.25rem] mb-3">
                                       {s.title}
                                   </h3>
                                   
@@ -1099,17 +1196,17 @@ const App: React.FC = () => {
 
       {/* Phase 1: Design Choice */}
       {currentScenario && currentStep === EcologicalStep.STUDY_DESIGN_CHOICE && (
-           <div className="absolute inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center">
-              <div className="bg-white rounded-2xl p-0 max-w-3xl w-full shadow-2xl animate-in zoom-in overflow-hidden flex">
-                  <div className="w-1/3 bg-slate-100 p-8 border-r border-slate-200 flex flex-col justify-center">
+           <div className="absolute inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-start md:items-center justify-center overflow-y-auto p-3 md:p-6">
+              <div className="bg-white rounded-2xl p-0 max-w-3xl w-full shadow-2xl animate-in zoom-in overflow-hidden flex flex-col md:flex-row my-auto max-h-[94dvh]">
+                  <div className="w-full md:w-1/3 bg-slate-100 p-5 md:p-8 border-b md:border-b-0 md:border-r border-slate-200 flex flex-col justify-center">
                       <div className="mb-6">
                           <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Protocolo Ativo</div>
                           <h3 className="font-bold text-xl text-blue-900">{currentScenario.title}</h3>
                       </div>
                       <p className="text-sm text-slate-600 leading-relaxed">Você precisa investigar a relação entre as variáveis deste tema usando dados secundários.</p>
                   </div>
-                  <div className="flex-1 p-8 flex flex-col">
-                    <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2"><Lightbulb className="text-yellow-500"/> Fase 1: Desenho Metodológico</h2>
+                   <div className="flex-1 p-5 md:p-8 flex flex-col overflow-y-auto">
+                    <h2 className="text-lg md:text-xl font-bold text-slate-800 mb-5 md:mb-6 flex items-center gap-2"><Lightbulb className="text-yellow-500 shrink-0"/> Fase 1: Desenho Metodológico</h2>
                     {!designFeedback ? (
                         <>
                             <div className="space-y-3 flex-1">
@@ -1160,23 +1257,23 @@ const App: React.FC = () => {
 
       {/* Phase 2: PECO Form */}
       {currentScenario && currentStep === EcologicalStep.PICO_FORMULATION && !popup && (
-          <div className="absolute inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center">
-              <div className="bg-white rounded-2xl p-8 max-w-2xl w-full shadow-2xl animate-in zoom-in border-t-8 border-yellow-400 relative">
+           <div className="absolute inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-start md:items-center justify-center overflow-y-auto p-3 md:p-6">
+               <div className="bg-white rounded-2xl p-4 md:p-8 max-w-2xl w-full shadow-2xl animate-in zoom-in border-t-8 border-yellow-400 relative my-auto max-h-[94dvh] overflow-y-auto">
                   <div className="absolute -top-6 left-8 bg-yellow-400 text-blue-900 px-4 py-1 rounded-full font-bold text-sm shadow-md flex items-center gap-2">
                       <Briefcase size={16}/> Fase 2: Estratégia PECO
                   </div>
-                  <div className="flex justify-between items-start mb-6 mt-2">
+                   <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-5 md:mb-6 mt-3 md:mt-2">
                       <p className="text-sm text-slate-600">Defina os elementos da pesquisa para o tema <strong>"{currentScenario.title}"</strong>.</p>
                       <button onClick={() => setShowPicoTutorial(true)} className="text-xs font-bold text-blue-600 flex items-center gap-1 hover:underline"><HelpCircle size={14}/> Como preencher?</button>
                   </div>
                   
-                  <div className="space-y-4 bg-slate-50 p-6 rounded-xl border border-slate-200">
+                   <div className="space-y-4 bg-slate-50 p-4 md:p-6 rounded-xl border border-slate-200">
                       <div className="grid grid-cols-1 gap-4">
                         <div>
                             <label className="flex items-center gap-2 text-xs font-bold text-blue-800 mb-1"><User size={12}/> P (População - Agregado)</label>
                             <input value={picoP} onChange={e=>setPicoP(e.target.value)} className="w-full border border-slate-300 p-3 rounded-lg text-sm focus:ring-2 ring-blue-200 outline-none" placeholder="Ex: Municípios do Estado de SP..."/>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-bold text-blue-800 mb-1">E (Exposição populacional)</label>
                                 <input value={picoI} onChange={e=>setPicoI(e.target.value)} className="w-full border border-slate-300 p-3 rounded-lg text-sm focus:ring-2 ring-blue-200 outline-none" placeholder="Ex: Alta urbanização..."/>
@@ -1213,8 +1310,8 @@ const App: React.FC = () => {
 
       {/* PECO Tutorial Modal */}
       {showPicoTutorial && (
-          <div className="absolute inset-0 z-[70] bg-black/60 flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl max-w-lg w-full p-6 animate-in zoom-in">
+          <div className="absolute inset-0 z-[70] bg-black/60 flex items-start md:items-center justify-center p-3 md:p-4 overflow-y-auto">
+              <div className="bg-white rounded-xl max-w-lg w-full p-4 md:p-6 animate-in zoom-in my-auto max-h-[94dvh] overflow-y-auto">
                   <div className="flex justify-between mb-4">
                       <h3 className="font-bold text-lg text-blue-900">Guia PECO para estudos ecológicos</h3>
                       <button onClick={() => setShowPicoTutorial(false)}><XCircle size={20} className="text-slate-400"/></button>
