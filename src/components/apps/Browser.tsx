@@ -175,7 +175,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
   
   // Custom tabs states
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [showSubscriptionNotice, setShowSubscriptionNotice] = useState(false);
+  const [browserNotice, setBrowserNotice] = useState<{ title: string; message: string; tone: 'success' | 'warning' | 'error' | 'info' } | null>(null);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [pigamesCategory, setPigamesCategory] = useState<string | null>(null);
   const [pigamesAnswered, setPigamesAnswered] = useState(false);
@@ -232,7 +232,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                            Seu trabalho foi aceito no Congresso Brasileiro de Saúde Pública & Epidemiologia. O banner já está pronto; falta registrar no Currículo Lattes as etapas do projeto.
                        </p>
                        <div className="mx-auto mb-7 max-w-lg rounded-lg border border-blue-200 bg-blue-50 p-3 text-left text-xs text-blue-900">
-                           No Lattes, cadastre projeto, artigo, banner e participação no congresso. Só depois você decide se quer encerrar o jogo ou continuar explorando.
+                           No Lattes, cadastre projeto, artigo, banner e participação no congresso.
                        </div>
                       <button onClick={() => navigate('lattes')} className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-lg shadow-lg">
                           Ir para o Currículo Lattes
@@ -427,7 +427,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
       setGeneratedData(data);
       setTabnetStep('result');
     } catch (e) {
-      alert("Erro ao conectar com o servidor DATASUS.");
+      setBrowserNotice({ title: 'Não foi possível gerar a tabela', message: 'Confira sua conexão e tente consultar o DATASUS novamente.', tone: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -498,7 +498,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
   const handleChecklistSubmit = () => {
       setShowChecklist(false);
       if (!attachment) {
-          alert("Você precisa anexar o seu Artigo (.doc) antes de enviar.");
+          setBrowserNotice({ title: 'Manuscrito não anexado', message: 'Anexe o arquivo .doc do artigo antes de enviar a mensagem.', tone: 'warning' });
           return;
       }
       onEmailSend(attachment.id);
@@ -513,7 +513,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
           setAttachment(file);
           setShowAttachModal(false);
       } else {
-          alert("Por favor, anexe apenas o arquivo .doc do manuscrito.");
+          setBrowserNotice({ title: 'Formato de arquivo incorreto', message: 'Selecione o arquivo .doc correspondente ao manuscrito.', tone: 'warning' });
       }
   };
 
@@ -531,11 +531,11 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
 
   const toggleSaveArticle = (article: ArticleHit) => {
       if (!verifiedArticles.includes(article.id) && !isSaved(article.id)) {
-          alert("Você precisa validar a referência ABNT antes de salvar este artigo na biblioteca.");
+          setBrowserNotice({ title: 'Referência ainda não validada', message: 'Conclua a atividade de referência ABNT antes de salvar este artigo na biblioteca.', tone: 'warning' });
           return;
       }
       if (!article.isGoodStudy) {
-          alert("Aviso: Você salvou um artigo com viés metodológico grave (viesado/fraco). Lembre-se de fazer as devidas ressalvas críticas ao citá-lo no seu manuscrito para não generalizar ou ser injusto!");
+          setBrowserNotice({ title: 'Atenção à qualidade metodológica', message: 'Este artigo apresenta limitações importantes. Ao citá-lo, descreva os vieses e evite generalizações que os resultados não sustentam.', tone: 'warning' });
       }
       onSaveReference(article);
   };
@@ -1256,9 +1256,9 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                           <button onClick={() => setShowChecklist(false)} className="flex-1 py-2 text-slate-500 font-bold text-sm hover:bg-slate-100 rounded">Voltar e Revisar</button>
                           <button 
                               onClick={() => {
-                                  if (!emailChecklist.attach || !emailChecklist.subject || !emailChecklist.review) {
-                                      alert("Atenção: Preencha todos os itens do checklist obrigatório antes de enviar.");
-                                      return;
+                                   if (!emailChecklist.attach || !emailChecklist.subject || !emailChecklist.review) {
+                                       setBrowserNotice({ title: 'Checklist incompleto', message: 'Confirme todos os itens obrigatórios antes de enviar o manuscrito.', tone: 'warning' });
+                                       return;
                                   }
                                   handleChecklistSubmit();
                               }} 
@@ -1462,7 +1462,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                                        <button onClick={() => {
                                            setIsSubscribed(true);
                                            onQuizComplete(15);
-                                           setShowSubscriptionNotice(true);
+                                           setBrowserNotice({ title: 'Inscrição confirmada!', message: 'Você se inscreveu no Mandic Talks, ativou o sino e recebeu +15 XP.', tone: 'success' });
                                        }} className="bg-red-600 hover:bg-red-700 active:scale-95 transition-all text-white font-bold text-xs px-4 py-2 rounded-full cursor-pointer">
                                           Inscrever-se no Canal
                                       </button>
@@ -2042,15 +2042,17 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
             <input value={inputUrl} readOnly className="flex-1 outline-none text-slate-700 cursor-default"/>
         </div>
       </div>
-      {showSubscriptionNotice && (
-          <div role="status" className="absolute top-12 right-3 left-3 sm:left-auto sm:w-96 z-50 rounded-xl border border-green-300 bg-white p-4 text-slate-800 shadow-2xl animate-in slide-in-from-top-2">
+      {browserNotice && (
+          <div role={browserNotice.tone === 'error' ? 'alert' : 'status'} className={`absolute top-12 right-3 left-3 sm:left-auto sm:w-96 z-50 rounded-xl border bg-white p-4 text-slate-800 shadow-2xl animate-in slide-in-from-top-2 ${browserNotice.tone === 'success' ? 'border-green-300' : browserNotice.tone === 'error' ? 'border-red-300' : browserNotice.tone === 'warning' ? 'border-amber-300' : 'border-blue-300'}`}>
               <div className="flex items-start gap-3">
-                  <div className="rounded-full bg-green-100 p-2 text-green-700"><CheckCircle size={20}/></div>
-                  <div className="flex-1">
-                      <h3 className="text-sm font-bold text-green-900">Inscrição confirmada!</h3>
-                      <p className="mt-1 text-xs leading-relaxed text-slate-600">Você se inscreveu no Mandic Talks, ativou o sino e recebeu +15 XP. O aviso fica dentro do jogo e não interrompe a tela cheia.</p>
+                  <div className={`rounded-full p-2 ${browserNotice.tone === 'success' ? 'bg-green-100 text-green-700' : browserNotice.tone === 'error' ? 'bg-red-100 text-red-700' : browserNotice.tone === 'warning' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                      {browserNotice.tone === 'success' ? <CheckCircle size={20}/> : <AlertCircle size={20}/>}
                   </div>
-                  <button aria-label="Fechar aviso" onClick={() => setShowSubscriptionNotice(false)} className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"><X size={16}/></button>
+                  <div className="flex-1">
+                      <h3 className="text-sm font-bold text-slate-900">{browserNotice.title}</h3>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-600">{browserNotice.message}</p>
+                  </div>
+                  <button aria-label="Fechar mensagem" onClick={() => setBrowserNotice(null)} className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"><X size={16}/></button>
               </div>
           </div>
       )}

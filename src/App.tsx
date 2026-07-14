@@ -120,6 +120,46 @@ const SCENARIOS: Scenario[] = [
     }
 ];
 
+const REVIEW_SOURCE_GROUPS = [
+    {
+        title: 'Fundamentos de epidemiologia e causalidade',
+        links: [
+            { label: 'OMS — Epidemiologia Básica', description: 'Livro introdutório sobre medidas, delineamentos, causalidade e prevenção.', url: 'https://www.who.int/publications/b/31231' },
+            { label: 'CDC — Principles of Epidemiology', description: 'Curso com exercícios sobre medidas epidemiológicas, vigilância e bioestatística.', url: 'https://archive.cdc.gov/www_cdc_gov/csels/dsepd/ss1978/index.html' },
+            { label: 'CDC — Field Epidemiology Manual', description: 'Capítulos sobre coleta, delineamento, análise e interpretação de dados.', url: 'https://www.cdc.gov/field-epi-manual/php/chapters/index.html' },
+            { label: 'Bradford Hill — texto original', description: 'Leitura histórica das nove considerações para discutir causalidade.', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC1291382/' },
+        ],
+    },
+    {
+        title: 'Dados brasileiros e busca bibliográfica',
+        links: [
+            { label: 'DATASUS — TABNET', description: 'Morbidade, mortalidade, nascidos vivos, assistência e indicadores de saúde.', url: 'https://datasus.saude.gov.br/informacoes-de-saude-tabnet/' },
+            { label: 'IBGE — Cidades e Estados', description: 'População e indicadores territoriais, demográficos e socioeconômicos.', url: 'https://www.ibge.gov.br/cidades-e-estados.html' },
+            { label: 'DeCS/MeSH — BIREME/OPAS/OMS', description: 'Descritores controlados em português, inglês e espanhol para estruturar buscas.', url: 'https://decs.bvsalud.org/' },
+            { label: 'PubMed — guia oficial', description: 'Estratégias, filtros, campos, histórico e busca avançada na base MEDLINE/PubMed.', url: 'https://pubmed.ncbi.nlm.nih.gov/help/' },
+        ],
+    },
+    {
+        title: 'Relato, leitura crítica e síntese de evidências',
+        links: [
+            { label: 'STROBE — EQUATOR Network', description: 'Checklist para relatar estudos observacionais com transparência e completude.', url: 'https://www.equator-network.org/reporting-guidelines/strobe/' },
+            { label: 'EQUATOR — biblioteca de diretrizes', description: 'Diretrizes de relato para diferentes desenhos, como CONSORT, PRISMA e STARD.', url: 'https://www.equator-network.org/reporting-guidelines/' },
+            { label: 'JBI — ferramentas de avaliação crítica', description: 'Instrumentos para examinar risco de viés em diferentes tipos de estudo.', url: 'https://jbi.global/critical-appraisal-tools' },
+            { label: 'Cochrane Handbook', description: 'Referência sobre revisão sistemática, medidas de efeito, viés e síntese.', url: 'https://training.cochrane.org/handbook/current' },
+            { label: 'CDC — intervalo de confiança', description: 'Explicação aplicada sobre estimativas, erro-padrão e precisão.', url: 'https://archive.cdc.gov/www_cdc_gov/csels/dsepd/ss1978/lesson2/section7.html' },
+        ],
+    },
+    {
+        title: 'Ética, manuscrito e escolha de periódico',
+        links: [
+            { label: 'CNS — Resolução nº 674/2022', description: 'Tipificação e tramitação de protocolos de pesquisa no Sistema CEP/Conep.', url: 'https://www.gov.br/conselho-nacional-de-saude/pt-br/acesso-a-informacao/atos-normativos/resolucoes/2022/resolucao-no-674.pdf/view' },
+            { label: 'ICMJE — recomendações', description: 'Autoria, ética, preparo do manuscrito, referências e submissão em revistas médicas.', url: 'https://www.icmje.org/recommendations/' },
+            { label: 'COPE — práticas centrais', description: 'Integridade, autoria, conflitos de interesse, dados e correções editoriais.', url: 'https://publicationethics.org/core-practices' },
+            { label: 'DOAJ — transparência editorial', description: 'Princípios para reconhecer periódicos abertos com práticas editoriais transparentes.', url: 'https://doaj.org/apply/transparency/' },
+        ],
+    },
+];
+
 const getAppIcon = (id: AppID) => {
   switch (id) {
     case AppID.GUIDE:
@@ -176,6 +216,7 @@ const App: React.FC = () => {
   const [currentScenario, setCurrentScenario] = useState<Scenario | null>(null);
   const [inputUser, setInputUser] = useState('');
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [loginError, setLoginError] = useState('');
   
   // Game State
   const [xp, setXp] = useState(0);
@@ -194,6 +235,7 @@ const App: React.FC = () => {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [bannerCompleted, setBannerCompleted] = useState(false);
   const [showFinishPrompt, setShowFinishPrompt] = useState(false);
+  const [showRestartPrompt, setShowRestartPrompt] = useState(false);
 
   // Phase 1 State
   const [selectedDesign, setSelectedDesign] = useState<string | null>(null);
@@ -223,15 +265,17 @@ const App: React.FC = () => {
       setApiKey('');
       setIsLoggedIn(true);
       setShowOnboarding(true);
+      setLoginError('');
       triggerFullScreen();
     } else {
-      alert("Por favor, preencha seu nome.");
+      setLoginError('Preencha seu nome para acessar o ambiente virtual.');
     }
   };
 
   const handleOfflineLogin = () => {
       setApiKey("OFFLINE_MODE_KEY_12345"); 
       setInputUser(inputUser || "Aluno Convidado");
+      setLoginError('');
       setIsLoggedIn(true);
       setShowOnboarding(true);
       triggerFullScreen();
@@ -528,7 +572,7 @@ const App: React.FC = () => {
 
   const toggleWindow = (id: AppID, startPath?: 'root' | 'trash') => {
       if (id === AppID.BANNER && currentStep < EcologicalStep.BANNER_CREATION && !emails.some(e => e.hasAction)) {
-          alert("Aplicativo bloqueado. Aguarde aprovação do orientador.");
+          setPopup({ title: 'Aplicativo ainda bloqueado', content: 'Envie o manuscrito ao orientador pelo **Pigmail** e aguarde o parecer antes de iniciar o banner.' });
           return;
       }
       
@@ -568,9 +612,7 @@ const App: React.FC = () => {
   };
 
   const handleRestart = () => {
-      if (window.confirm("Deseja realmente reiniciar a simulação? Todo o progresso desta partida será apagado.")) {
-          window.location.reload();
-      }
+      setShowRestartPrompt(true);
   };
 
   const handlePrintCertificate = () => {
@@ -637,10 +679,11 @@ const App: React.FC = () => {
                         className="w-full px-4 py-2.5 rounded-lg bg-black/30 text-white placeholder-white/30 outline-none border border-white/10 focus:border-white/50 focus:bg-black/50 transition-all text-sm"
                         placeholder="Ex: João Silva"
                         value={inputUser}
-                        onChange={e => setInputUser(e.target.value)}
+                        onChange={e => { setInputUser(e.target.value); if (loginError) setLoginError(''); }}
                         onKeyDown={e => e.key === 'Enter' && handleLogin()}
                      />
                   </div>
+                  {loginError && <p role="alert" className="-mt-2 text-xs font-medium text-red-300">{loginError}</p>}
 
                  <button 
                      onClick={handleLogin} 
@@ -794,6 +837,20 @@ const App: React.FC = () => {
                    Continuar explorando
                 </button>
 
+                {showRestartPrompt && (
+                    <div id="no-print" className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
+                        <div role="alertdialog" aria-modal="true" aria-labelledby="restart-title" className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl animate-in zoom-in">
+                            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-700"><RotateCcw size={24}/></div>
+                            <h3 id="restart-title" className="text-xl font-bold text-slate-900">Reiniciar a simulação?</h3>
+                            <p className="mt-2 text-sm leading-relaxed text-slate-600">Todo o progresso desta partida será apagado e você voltará à tela inicial.</p>
+                            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                                <button onClick={() => setShowRestartPrompt(false)} className="rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">Cancelar</button>
+                                <button onClick={() => window.location.reload()} className="rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-red-700">Apagar e reiniciar</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Review Modal */}
                 {showReviewModal && (
                   <div id="no-print" className="absolute inset-0 bg-black/80 z-[100] flex items-center justify-center p-4">
@@ -873,17 +930,6 @@ const App: React.FC = () => {
                                     </ul>
                                 </section>
 
-                                <section className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                                    <h3 className="font-bold text-lg text-slate-800 mb-2">Fontes confiáveis para continuar estudando</h3>
-                                    <p className="text-xs text-slate-500 mb-3">Links oficiais e leitura metodológica usados para revisar este material:</p>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                                        <a href="https://datasus.saude.gov.br/sistemas/" target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">DATASUS — catálogo de sistemas</a>
-                                        <a href="https://www.gov.br/conselho-nacional-de-saude/pt-br/acesso-a-informacao/atos-normativos/resolucoes/2022/resolucao-no-674.pdf/view" target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">CNS — Resolução nº 674/2022</a>
-                                        <a href="https://archive.cdc.gov/www_cdc_gov/csels/dsepd/ss1978/lesson2/section7.html" target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">CDC — intervalos de confiança</a>
-                                        <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC1291382/" target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">Considerações de Hill e inferência causal</a>
-                                    </div>
-                                </section>
-
                                 <section>
                                     <h3 className="font-bold text-lg text-slate-800 mb-2 border-l-4 border-yellow-500 pl-2">7. Pearson, Spearman, p-valor e IC95%</h3>
                                     <div className="space-y-2 text-sm text-slate-600">
@@ -912,6 +958,32 @@ const App: React.FC = () => {
                                         <li>Escolha periódico e congresso pelo escopo, público e transparência editorial — não apenas por prestígio ou promessa de rapidez.</li>
                                         <li>No Lattes, registre cada produção na categoria e situação verdadeiras. Projeto em andamento, manuscrito aceito e artigo publicado não são equivalentes.</li>
                                     </ul>
+                                </section>
+
+                                <section className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-4 md:p-6">
+                                    <div className="mb-5">
+                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-600">Biblioteca recomendada</p>
+                                        <h3 className="mt-1 text-xl font-bold text-slate-900">Fontes confiáveis para continuar estudando</h3>
+                                        <p className="mt-2 text-sm leading-relaxed text-slate-600">Uma seleção de materiais oficiais e referências metodológicas para aprofundar epidemiologia, bioestatística, busca, escrita e integridade científica.</p>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                                        {REVIEW_SOURCE_GROUPS.map(group => (
+                                            <div key={group.title} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                                                <h4 className="mb-3 text-sm font-bold text-slate-800">{group.title}</h4>
+                                                <div className="space-y-3">
+                                                    {group.links.map(link => (
+                                                        <a key={link.url} href={link.url} target="_blank" rel="noreferrer" className="group block rounded-lg border border-transparent p-2 transition-colors hover:border-blue-200 hover:bg-blue-50">
+                                                            <span className="flex items-start justify-between gap-2 text-sm font-bold text-blue-700 group-hover:underline">
+                                                                {link.label}<span aria-hidden="true" className="shrink-0">↗</span>
+                                                            </span>
+                                                            <span className="mt-1 block text-xs leading-relaxed text-slate-500">{link.description}</span>
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <p className="mt-4 text-xs leading-relaxed text-slate-500">Dica: use diretrizes de relato para escrever melhor e ferramentas de avaliação crítica para julgar risco de viés; elas têm finalidades diferentes.</p>
                                 </section>
                            </div>
                            

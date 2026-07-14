@@ -33,7 +33,6 @@ export const BannerDesigner: React.FC<{ onFinish: () => void }> = ({ onFinish })
 
     const handleFinish = () => {
         if (!allPlaced || !qualityApproved) {
-            alert("Adicione todas as seções e conclua a revisão de qualidade antes de finalizar.");
             return;
         }
         setIsFinished(true);
