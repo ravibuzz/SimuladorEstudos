@@ -1435,9 +1435,9 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                                   </button>
                                   <span className="text-sm font-bold text-slate-200 mt-4 tracking-wide bg-black/60 px-3 py-1 rounded">Clique para assistir o Podcast</span>
                               </div>
-                              <div className="absolute bottom-4 left-4 right-4 bg-black/60 p-3 rounded-lg backdrop-blur z-10 flex justify-between items-center text-xs">
-                                  <div className="font-bold">Mandic Talks - Estudos Epidemiológicos com Thales, Leonardo & Theo</div>
-                                  <div className="text-slate-300">45:12</div>
+                              <div className="absolute bottom-4 left-4 right-4 bg-black/60 p-3 rounded-lg backdrop-blur z-10 flex justify-between items-center gap-3 text-xs">
+                                  <div className="font-bold leading-snug">Mandic Talks — Estudos Epidemiológicos com Thales Báccaro, Leonardo Sartori e Theo Báccaro</div>
+                                  <div className="text-slate-300 shrink-0">45:12</div>
                               </div>
                           </>
                       )}
@@ -1473,7 +1473,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                       
                       <div className="mt-4 bg-[#272727] p-4 rounded-xl text-xs text-slate-300 leading-relaxed border border-[#3d3d3d]">
                           <p className="font-bold text-slate-100 mb-1">Publicado em 2026 • 15.392 visualizações</p>
-                          Neste episódio do <strong className="text-red-400">Mandic Talks</strong>, nossos convidados Thales, Leonardo e Theo (T7 - A) desmistificam o uso de dados de domínio público (como o DATASUS) e as armadilhas clássicas da estatística e medicina baseada em evidências. Aprenda a não cair no viés de falácia ecológica!
+                          Neste episódio do <strong className="text-red-400">Mandic Talks</strong>, nossos convidados Thales Báccaro, Leonardo Sartori e Theo Báccaro desmistificam o uso de dados de domínio público (como o DATASUS) e as armadilhas clássicas da estatística e medicina baseada em evidências. Aprenda a não cair no viés de falácia ecológica!
                       </div>
                   </div>
               </div>

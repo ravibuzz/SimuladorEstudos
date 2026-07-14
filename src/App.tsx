@@ -670,7 +670,7 @@ const App: React.FC = () => {
              </div>
              <h1 className="text-xl font-bold text-white mb-1 leading-tight">Simulador de Estudos Epidemiológicos</h1>
              <p className="text-blue-200 font-light text-xs">Ambiente Virtual de Aprendizado</p>
-             <p className="text-slate-300 font-medium text-[10px] mt-1.5 mb-6">Feito por Thales, Leonardo e Theo (T7 - A)</p>
+             <p className="text-slate-300 font-medium text-[10px] mt-1.5 mb-6">Feito por Thales Báccaro, Leonardo Sartori e Theo Báccaro</p>
              
              <div className="space-y-4 relative group text-left">
                  <div className="relative">
@@ -824,6 +824,9 @@ const App: React.FC = () => {
                              <button onClick={handlePrintCertificate} className="bg-green-600 text-white px-4 py-2 rounded font-bold shadow-lg flex items-center gap-2 hover:bg-green-700 transition-all">
                                 <Printer size={18}/> Baixar PDF
                              </button>
+                        </div>
+                        <div className="absolute top-4 left-4 text-[8px] md:text-[9px] leading-relaxed text-slate-400" style={{maxWidth: '48%'}}>
+                            Desenvolvido por Thales Báccaro, Leonardo Sartori e Theo Báccaro
                         </div>
                         <div className="absolute bottom-4 right-4 text-[10px] text-slate-400">Simulador de Epidemiologia</div>
                     </div>
@@ -1176,7 +1179,7 @@ const App: React.FC = () => {
                              <p className="text-slate-400 text-xs mb-8 tracking-[0.2em] uppercase">System Kernel v2.5.0</p>
                              
                              <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-xl w-full max-w-sm max-h-48 overflow-y-auto">
-                                 <h3 className="text-xs font-bold text-slate-300 uppercase mb-4 border-b border-white/10 pb-2">Creators (T7)</h3>
+                                 <h3 className="text-xs font-bold text-slate-300 uppercase mb-4 border-b border-white/10 pb-2">Autores do simulador</h3>
                                  <ul className="space-y-3 text-sm">
                                      <li className="flex items-center justify-between group">
                                          <span className="text-slate-400 group-hover:text-white transition-colors">Autor</span>
