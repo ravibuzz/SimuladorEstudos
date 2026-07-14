@@ -1,0 +1,6 @@
+{
+  "name": "Simulador de Estudos - PIG IV",
+  "description": "Uma simulação interativa de sistema operacional para ensinar estudantes de medicina a conduzir estudos científicos ecológicos utilizando fontes de dados secundárias como o DATASUS.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
