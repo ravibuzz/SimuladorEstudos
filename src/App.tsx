@@ -1,0 +1,1163 @@
+
+import React, { useState, useEffect } from 'react';
+import { Monitor, Globe, FileSpreadsheet, FileText, Settings, Power, User, Lock, Folder, ArrowRight, PlayCircle, Lightbulb, XCircle, Award, Trash2, CheckCircle, Briefcase, AlertTriangle, RotateCcw, HelpCircle, BookOpen, Code, Cpu, HeartPulse, BrainCircuit, Camera, WifiOff, Printer, BarChart2, Scale, Microscope } from 'lucide-react';
+import { WindowFrame } from './components/ui/WindowFrame';
+import { Browser } from './components/apps/Browser';
+import { DataStudio } from './components/apps/DataStudio';
+import { PaperWriter } from './components/apps/PaperWriter';
+import { Tutor } from './components/apps/Tutor';
+import { Explorer } from './components/apps/Explorer';
+import { BannerDesigner } from './components/apps/BannerDesigner';
+import { AppID, WindowState, VirtualFile, Scenario, EcologicalStep, ClipboardItem, Email, ArticleHit, GameStats } from './types';
+import { setApiKey, validatePICO } from './services/geminiService';
+
+// Windows Config
+const DEFAULT_WINDOWS: Record<AppID, WindowState> = {
+  [AppID.GUIDE]: {
+    id: AppID.GUIDE,
+    title: 'Chatbots de Pesquisa IA',
+    isOpen: true, 
+    isMinimized: false,
+    isMaximized: false,
+    zIndex: 10,
+    position: { x: 900, y: 80 },
+    size: { width: 350, height: 500 }
+  },
+  [AppID.BROWSER]: {
+    id: AppID.BROWSER,
+    title: 'Piggle Chrome',
+    isOpen: false,
+    isMinimized: false,
+    isMaximized: false,
+    zIndex: 1,
+    position: { x: 50, y: 30 },
+    size: { width: 1000, height: 650 }
+  },
+  [AppID.SHEET]: {
+    id: AppID.SHEET,
+    title: 'Pigxcel',
+    isOpen: false,
+    isMinimized: false,
+    isMaximized: false,
+    zIndex: 2,
+    position: { x: 100, y: 60 },
+    size: { width: 900, height: 600 }
+  },
+  [AppID.WORD]: {
+    id: AppID.WORD,
+    title: 'Pigword',
+    isOpen: false,
+    isMinimized: false,
+    isMaximized: false,
+    zIndex: 3,
+    position: { x: 150, y: 90 },
+    size: { width: 800, height: 700 }
+  },
+  [AppID.SETTINGS]: { 
+    id: AppID.SETTINGS,
+    title: 'System Info',
+    isOpen: false,
+    isMinimized: false,
+    isMaximized: false,
+    zIndex: 5,
+    position: { x: 300, y: 200 },
+    size: { width: 500, height: 350 }
+  },
+  [AppID.EXPLORER]: {
+      id: AppID.EXPLORER,
+      title: 'Explorador de Arquivos',
+      isOpen: false,
+      isMinimized: false,
+      isMaximized: false,
+      zIndex: 1,
+      position: { x: 200, y: 150},
+      size: { width: 800, height: 500}
+  },
+  [AppID.BANNER]: {
+      id: AppID.BANNER,
+      title: 'Banner Designer Pro',
+      isOpen: false,
+      isMinimized: false,
+      isMaximized: false,
+      zIndex: 6,
+      position: { x: 50, y: 50},
+      size: { width: 1100, height: 750}
+  }
+};
+
+const SCENARIOS: Scenario[] = [
+    {
+        id: 'dengue_sp',
+        title: 'Dossiê Dengue-SP: Urbanização e Dinâmica Espacial de Transmissão',
+        description: 'Investigue o padrão espacial da transmissão de Dengue em relação à taxa de urbanização municipal no Estado de São Paulo.',
+        objective: 'Coletar dados de incidência de Dengue e analisar se há correlação com a taxa de urbanização dos municípios.',
+        correctSystem: 'SINAN',
+        recommendedKeywords: ['Dengue', 'Município', 'São Paulo']
+    },
+    {
+        id: 'infant_mortality',
+        title: 'Dossiê SIM-Infância: Desigualdade Socioeconômica e Mortalidade Infantil Regional',
+        description: 'Analise se regiões com menor renda possuem maior mortalidade infantil.',
+        objective: 'Identificar tendências de óbitos em menores de 1 ano.',
+        correctSystem: 'SIM',
+        recommendedKeywords: ['Mortalidade Infantil', 'Nordeste', 'Ano']
+    },
+    {
+        id: 'tb_aids',
+        title: 'Dossiê Co-infecção TB-HIV: Padrões de Associação Geográfica e Vulnerabilidade',
+        description: 'Estude a correlação geográfica entre casos de Tuberculose e AIDS.',
+        objective: 'Verificar se municípios com alta incidência de AIDS também têm alta TB.',
+        correctSystem: 'SINAN',
+        recommendedKeywords: ['Tuberculose', 'AIDS', 'Município']
+    },
+    {
+        id: 'asthma_poluicao',
+        title: 'Dossiê SIH-Asma: Poluição Atmosférica e Taxas de Internação Hospitalar',
+        description: 'Estude se as internações por asma apresentam variações sazonais associadas ao nível de poluentes atmosféricos agregados.',
+        objective: 'Analisar as taxas de internação hospitalar por asma em relação aos níveis agregados de poluição.',
+        correctSystem: 'SIH',
+        recommendedKeywords: ['Internações por Asma', 'Ano']
+    }
+];
+
+const getAppIcon = (id: AppID) => {
+  switch (id) {
+    case AppID.GUIDE:
+      return <BrainCircuit size={14} className="text-emerald-400"/>;
+    case AppID.BROWSER:
+      return <Globe size={14} className="text-blue-400"/>;
+    case AppID.SHEET:
+      return <FileSpreadsheet size={14} className="text-green-400"/>;
+    case AppID.WORD:
+      return <FileText size={14} className="text-blue-400"/>;
+    case AppID.EXPLORER:
+      return <Folder size={14} className="text-yellow-400"/>;
+    case AppID.SETTINGS:
+      return <Settings size={14} className="text-slate-400"/>;
+    case AppID.BANNER:
+      return <Monitor size={14} className="text-purple-400"/>;
+    default:
+      return <Monitor size={14} />;
+  }
+};
+
+const EducationalPopup = ({ title, content, onClose }: { title: string, content: string, onClose: () => void }) => {
+    // Simple bold parser for popups since they only use **bold** syntax
+    const renderContent = () => {
+        const parts = content.split(/(\*\*.*?\*\*)/g);
+        return parts.map((part, i) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={i} className="font-bold text-blue-800">{part.slice(2, -2)}</strong>;
+            }
+            return <span key={i}>{part}</span>;
+        });
+    };
+
+    return (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[100] bg-white/95 backdrop-blur border-l-4 border-blue-600 text-slate-800 p-6 rounded-r-lg shadow-2xl max-w-lg animate-in fade-in slide-in-from-top-4">
+            <div className="flex items-start gap-4">
+                <div className="bg-blue-100 p-2 rounded-full text-blue-600">
+                    <Lightbulb size={24} />
+                </div>
+                <div>
+                    <h3 className="font-bold text-lg mb-2 text-blue-900">{title}</h3>
+                    <p className="text-sm leading-relaxed text-slate-600 whitespace-pre-line">{renderContent()}</p>
+                    <button onClick={onClose} className="mt-4 text-xs font-bold text-blue-600 hover:underline uppercase tracking-wider">Entendi, continuar</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const App: React.FC = () => {
+  const [windows, setWindows] = useState<Record<AppID, WindowState>>(DEFAULT_WINDOWS);
+  const [activeAppId, setActiveAppId] = useState<AppID | null>(AppID.GUIDE);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentScenario, setCurrentScenario] = useState<Scenario | null>(null);
+  const [inputUser, setInputUser] = useState('');
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  
+  // Game State
+  const [xp, setXp] = useState(0);
+  const [gameStats, setGameStats] = useState<GameStats>({ badSearchQueries: 0, wrongDesignChoices: 0, picoRetries: 0, articlesRead: 0, quizMistakes: 0, predatorySubmission: false });
+  const [currentStep, setCurrentStep] = useState<EcologicalStep>(EcologicalStep.SCENARIO_SELECTION);
+  const [clipboard, setClipboard] = useState<ClipboardItem | null>(null);
+  const [fileSystem, setFileSystem] = useState<VirtualFile[]>([]);
+  const [emails, setEmails] = useState<Email[]>([]);
+  const [popup, setPopup] = useState<{title: string, content: string} | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [isGameOver, setIsGameOver] = useState(false);
+  const [explorerStartPath, setExplorerStartPath] = useState<'root'|'trash'>('root');
+  const [showMissionWidget, setShowMissionWidget] = useState(false);
+  const [savedReferences, setSavedReferences] = useState<ArticleHit[]>([]);
+  const [fileToOpen, setFileToOpen] = useState<VirtualFile | null>(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+
+  // Phase 1 State
+  const [selectedDesign, setSelectedDesign] = useState<string | null>(null);
+  const [designFeedback, setDesignFeedback] = useState<{correct: boolean, msg: string} | null>(null);
+
+  // PICO Form State
+  const [picoP, setPicoP] = useState('');
+  const [picoI, setPicoI] = useState('');
+  const [picoC, setPicoC] = useState('');
+  const [picoO, setPicoO] = useState('');
+  const [picoLoading, setPicoLoading] = useState(false);
+  const [picoFeedback, setPicoFeedback] = useState('');
+  const [showPicoTutorial, setShowPicoTutorial] = useState(false);
+
+  const triggerFullScreen = () => {
+      const elem = document.documentElement;
+      if (!document.fullscreenElement) {
+          elem.requestFullscreen().catch(err => {
+              console.log(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+          });
+      }
+  };
+
+  const handleLogin = () => {
+    if (inputUser.trim().length > 0) {
+      // The Gemini key stays only on the server (Render environment variable).
+      setApiKey('');
+      setIsLoggedIn(true);
+      setShowOnboarding(true);
+      triggerFullScreen();
+    } else {
+      alert("Por favor, preencha seu nome.");
+    }
+  };
+
+  const handleOfflineLogin = () => {
+      setApiKey("OFFLINE_MODE_KEY_12345"); 
+      setInputUser(inputUser || "Aluno Convidado");
+      setIsLoggedIn(true);
+      setShowOnboarding(true);
+      triggerFullScreen();
+      
+      setTimeout(() => {
+          setPopup({
+              title: "Modo Offline Ativado",
+              content: "Você entrou no modo de simulação sem internet/IA. O DATASUS e o PubMed usarão bancos de dados locais pré-gravados. Bom aprendizado!"
+          });
+      }, 1000);
+  };
+
+  const updateStats = (key: keyof GameStats, value?: any) => {
+      setGameStats(prev => {
+          if (typeof prev[key] === 'number') {
+              return {...prev, [key]: (prev[key] as number) + 1};
+          }
+          return {...prev, [key]: value};
+      });
+  };
+
+  const handleScenarioSelect = (scenario: Scenario) => {
+      setCurrentScenario(scenario);
+      setCurrentStep(EcologicalStep.STUDY_DESIGN_CHOICE);
+  };
+
+  const confirmDesignChoice = () => {
+      if (!selectedDesign) return;
+      
+      if (selectedDesign === 'ecologico') {
+          setDesignFeedback({
+              correct: true,
+              msg: "Correto! Estudos Ecológicos utilizam dados agregados (populacionais) e secundários, ideais para este cenário."
+          });
+          setTimeout(() => {
+              setCurrentStep(EcologicalStep.PICO_FORMULATION);
+              setXp(prev => prev + 50);
+              setDesignFeedback(null);
+              setSelectedDesign(null);
+              setPopup({
+                  title: "Excelente escolha!",
+                  content: "Você identificou corretamente o desenho. Agora precisamos estruturar a pergunta de pesquisa."
+              });
+          }, 2500);
+      } else {
+          const msg = selectedDesign === 'coorte' 
+            ? "Incorreto. Uma Coorte exige acompanhar indivíduos ao longo do tempo. Aqui temos apenas dados consolidados por região."
+            : "Incorreto. Ensaio Clínico envolve testar uma intervenção (remédio/terapia) em pacientes. Nós apenas observaremos dados existentes.";
+          setDesignFeedback({ correct: false, msg });
+          updateStats('wrongDesignChoices');
+      }
+  };
+
+  const handlePICOSubmit = async () => {
+      if(!currentScenario) return;
+      setPicoLoading(true);
+      const result = await validatePICO(picoP, picoI, picoC, picoO, currentScenario);
+      setPicoLoading(false);
+      
+      if (result.isCorrect) {
+          setPicoFeedback('');
+          setCurrentStep(EcologicalStep.DATA_COLLECTION);
+          setXp(prev => prev + 100);
+          setShowMissionWidget(true);
+          setPopup({
+              title: "Estratégia PICO Aprovada!",
+              content: `Ótimo! ${result.feedback || "Sua pergunta condiz com o tema e o desenho ecológico."} Agora você deve coletar os dados. Abra o Piggle Chrome e acesse o DATASUS. Atenção ao sistema correto (SIM vs SINAN).`
+          });
+      } else {
+          setPicoFeedback(result.feedback);
+          updateStats('picoRetries');
+      }
+  };
+
+  const handleSaveFile = (file: VirtualFile) => {
+    setFileSystem(prev => [...prev, file]);
+    
+    if (currentStep === EcologicalStep.DATA_COLLECTION && file.type === 'csv') {
+        setCurrentStep(EcologicalStep.ANALYSIS);
+        setPopup({
+            title: "Download Concluído",
+            content: "O arquivo .CSV foi salvo na pasta 'Downloads'. Agora abra o aplicativo 'Pigxcel' e use o botão 'Abrir Arquivo' para processar esses dados."
+        });
+        setXp(prev => prev + 100);
+    }
+
+    if (file.type === 'doc') {
+        setPopup({
+            title: "Manuscrito Salvo!",
+            content: "Parabéns! Seu artigo foi salvo na pasta 'Documentos'.\n\nO próximo passo é enviar para avaliação:\n1. Abra o **Piggle Chrome**\n2. Acesse o **Webmail**\n3. Envie um novo e-mail para o Orientador anexando seu arquivo."
+        });
+    }
+  };
+
+  const handleDeleteFile = (id: string) => {
+      setFileSystem(prev => prev.map(f => f.id === id ? {...f, folder: 'trash'} : f));
+  };
+
+  const handleRestoreFile = (id: string) => {
+      setFileSystem(prev => prev.map(f => f.id === id ? {...f, folder: f.type === 'doc' ? 'documents' : 'downloads'} : f));
+  };
+
+  const handleOpenFileFromExplorer = (file: VirtualFile) => {
+      if (file.type === 'csv') {
+          setFileToOpen(file);
+          toggleWindow(AppID.SHEET);
+      } else if (file.type === 'doc') {
+          toggleWindow(AppID.WORD);
+      }
+  };
+
+  const handleSaveReference = (article: ArticleHit) => {
+      if (!savedReferences.some(r => r.id === article.id)) {
+          setSavedReferences(prev => [...prev, { ...article, cited: true }]);
+          setXp(prev => prev + 20); 
+          updateStats('articlesRead');
+      }
+  };
+
+  const handleCopySuccess = (type: 'chart' | 'table') => {
+      if (currentStep === EcologicalStep.ANALYSIS) {
+           setCurrentStep(EcologicalStep.WRITING);
+           setPopup({
+               title: "Dados Copiados!",
+               content: `Você copiou ${type === 'chart' ? 'o Gráfico' : 'a Tabela'} com sucesso. O próximo passo lógico é abrir o **Pigword**, escrever seus resultados e usar o botão "Colar".`
+           });
+      }
+  };
+
+  const handleEmailSend = (attachmentId: string | null) => {
+      if (attachmentId === 'BANNER_TRIGGER') {
+          setCurrentStep(EcologicalStep.JOURNAL_SUBMISSION);
+          setPopup({
+              title: "Pronto para Publicar!",
+              content: "O Banner foi finalizado. Agora, seu orientador pediu para você submeter o artigo a uma revista científica. Abra o 'Piggle Chrome' e acesse o novo ícone 'Portal de Periódicos'."
+          });
+          toggleWindow(AppID.BANNER);
+          return;
+      }
+
+      setCurrentStep(EcologicalStep.AWAITING_REVIEW);
+      setXp(prev => prev + 200);
+      
+      // Increased delay to 15 seconds
+      setTimeout(() => {
+          const newEmail: Email = {
+              id: Date.now().toString(),
+              from: 'Orientador PIG IV',
+              subject: 'Parecer Final: Artigo Aprovado',
+              body: `Olá ${inputUser}, analisei seu manuscrito. A metodologia ecológica foi bem aplicada e os dados do DATASUS sustentam a discussão. Gostei do embasamento bibliográfico. Como próximo passo, clique no botão abaixo para iniciar a criação do seu Banner para o congresso.`,
+              read: false,
+              date: new Date(),
+              hasAction: true,
+              actionLabel: "Criar Banner"
+          };
+          setEmails(prev => [newEmail, ...prev]);
+          setPopup({
+              title: "Você tem um novo e-mail!",
+              content: "O orientador respondeu sua submissão. Abra o Webmail no Piggle Chrome para ver o parecer final."
+          });
+      }, 15000); // 15s Delay
+  };
+
+  // Final Game Over Handler
+  const handleJournalSubmissionSuccess = () => {
+      setCurrentStep(EcologicalStep.CONGRESS_SUBMISSION);
+  }
+
+  const handleCongressSuccess = () => {
+      setCurrentStep(EcologicalStep.LATTES_REGISTRATION);
+  }
+
+  // Handle Lattes success
+  const handleLattesSuccess = () => {
+      setIsGameOver(true);
+  }
+
+  // Calculate Skill Scores
+  const calculateSkills = () => {
+      const methodScore = Math.max(0, 100 - (gameStats.wrongDesignChoices * 30) - (gameStats.picoRetries * 15));
+      const ethicsScore = Math.max(0, 100 - (gameStats.predatorySubmission ? 50 : 0));
+      const statsScore = Math.max(0, 100 - (gameStats.quizMistakes * 20));
+      return { methodScore, ethicsScore, statsScore };
+  }
+
+  // Dynamic desktop shortcut indicator to guide user next steps
+  const getShortcutGlow = (id: AppID) => {
+    if (currentStep === EcologicalStep.DATA_COLLECTION && id === AppID.BROWSER) {
+      return 'ring-4 ring-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)] animate-pulse scale-105';
+    }
+    if (currentStep === EcologicalStep.ANALYSIS && id === AppID.SHEET) {
+      return 'ring-4 ring-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)] animate-pulse scale-105';
+    }
+    if (currentStep === EcologicalStep.WRITING && id === AppID.WORD) {
+      return 'ring-4 ring-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.8)] animate-pulse scale-105';
+    }
+    return '';
+  };
+
+  const toggleWindow = (id: AppID, startPath?: 'root' | 'trash') => {
+      if (id === AppID.BANNER && currentStep < EcologicalStep.BANNER_CREATION && !emails.some(e => e.hasAction)) {
+          alert("Aplicativo bloqueado. Aguarde aprovação do orientador.");
+          return;
+      }
+      
+      if (id === AppID.EXPLORER && startPath) {
+          setExplorerStartPath(startPath);
+      } else if (id === AppID.EXPLORER) {
+          setExplorerStartPath('root');
+      }
+
+      setWindows(prev => {
+          const win = prev[id];
+          const allWindows = Object.values(prev) as WindowState[];
+          const maxZ = Math.max(...allWindows.map(w => w.zIndex));
+
+          if (win.isOpen && !win.isMinimized && activeAppId === id) {
+              return { ...prev, [id]: { ...win, isMinimized: true } };
+          }
+          
+          if (win.isOpen) {
+              setActiveAppId(id);
+              return { ...prev, [id]: { ...win, isMinimized: false, zIndex: maxZ + 1 } };
+          }
+
+          setActiveAppId(id);
+          return { ...prev, [id]: { ...win, isOpen: true, isMinimized: false, zIndex: maxZ + 1 } };
+      });
+      setMenuOpen(false);
+  };
+  
+  const closeWindow = (id: AppID) => setWindows(prev => ({ ...prev, [id]: { ...prev[id], isOpen: false } }));
+  const focusWindow = (id: AppID) => {
+      setActiveAppId(id);
+      setWindows(prev => {
+           const maxZ = Math.max(...(Object.values(prev) as WindowState[]).map(w => w.zIndex));
+           return { ...prev, [id]: { ...prev[id], zIndex: maxZ + 1 } };
+      });
+  };
+
+  const handleRestart = () => {
+      window.location.href = window.location.href;
+  };
+
+  const handlePrintCertificate = () => {
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+          const content = document.getElementById('certificate-container')?.innerHTML || '';
+          printWindow.document.write(`
+              <html>
+              <head>
+                  <title>Certificado de Conclusão - ${inputUser}</title>
+                  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+                  <style>
+                      @page {
+                          size: A4 landscape;
+                          margin: 0;
+                      }
+                      body {
+                          font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+                          background: white;
+                          padding: 40px;
+                          margin: 0;
+                          display: flex;
+                          align-items: center;
+                          justify-content: center;
+                          height: 100vh;
+                      }
+                      #no-print { display: none !important; }
+                  </style>
+              </head>
+              <body onload="setTimeout(function() { window.print(); window.close(); }, 500)">
+                  <div class="w-full h-full max-w-4xl max-h-[90vh] flex flex-col items-center justify-center border-[16px] border-double border-blue-900 p-12 relative bg-white shadow-inner" style="border-color: #1e3a8a;">
+                      ${content}
+                  </div>
+              </body>
+              </html>
+          `);
+          printWindow.document.close();
+      } else {
+          window.print();
+      }
+  };
+
+  const { methodScore, ethicsScore, statsScore } = calculateSkills();
+
+  // --- Render ---
+
+  if (!isLoggedIn) {
+    return (
+      <div className="h-screen w-screen bg-slate-900 flex items-center justify-center relative overflow-hidden">
+         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072')] bg-cover opacity-40"></div>
+         <div className="z-10 bg-white/10 p-8 rounded-3xl backdrop-blur-xl border border-white/20 text-center shadow-2xl animate-in zoom-in duration-500 max-w-md w-full">
+             <div className="w-20 h-20 bg-slate-200 rounded-full mx-auto mb-4 flex items-center justify-center shadow-inner border-4 border-white/10">
+                 <User size={40} className="text-slate-500" />
+             </div>
+             <h1 className="text-xl font-bold text-white mb-1 leading-tight">Simulador de Estudos Epidemiológicos</h1>
+             <p className="text-blue-200 font-light text-xs">Ambiente Virtual de Aprendizado</p>
+             <p className="text-slate-300 font-medium text-[10px] mt-1.5 mb-6">Feito por Thales, Leonardo e Theo (T7 - A)</p>
+             
+             <div className="space-y-4 relative group text-left">
+                 <div className="relative">
+                    <label className="absolute -top-2.5 left-3 bg-slate-900 text-blue-400 text-[9px] px-2 rounded uppercase font-bold tracking-wider">Nome Completo</label>
+                    <input 
+                        className="w-full px-4 py-2.5 rounded-lg bg-black/30 text-white placeholder-white/30 outline-none border border-white/10 focus:border-white/50 focus:bg-black/50 transition-all text-sm"
+                        placeholder="Ex: João Silva"
+                        value={inputUser}
+                        onChange={e => setInputUser(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                     />
+                  </div>
+
+                 <button 
+                     onClick={handleLogin} 
+                     className="relative overflow-hidden w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white font-bold text-sm shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 border border-white/20 cursor-pointer group animate-pulse hover:animate-none"
+                 >
+                     <span>Acessar Ambiente Virtual</span>
+                     <PlayCircle size={18} className="text-blue-200 group-hover:text-white transition-colors group-hover:translate-x-0.5 transition-transform"/>
+                 </button>
+
+                 <div className="pt-3 border-t border-white/10 text-center">
+                     <button 
+                        onClick={handleOfflineLogin} 
+                        className="text-[10px] text-slate-400 hover:text-white flex items-center justify-center gap-1 w-full transition-colors"
+                     >
+                          <WifiOff size={10}/> Entrar em Modo Offline (sem IA)
+                     </button>
+                 </div>
+             </div>
+         </div>
+      </div>
+    );
+  }
+
+  if (isGameOver) {
+      return (
+          <>
+            <style>{`
+                @media print {
+                    body * { visibility: hidden; }
+                    #certificate-container, #certificate-container * { visibility: visible; }
+                    #certificate-container { 
+                        position: absolute; 
+                        left: 0; top: 0; 
+                        width: 100%; height: 100%; 
+                        border: 5px solid #1e3a8a; 
+                        margin: 0; padding: 0;
+                        box-sizing: border-box;
+                    }
+                    #no-print { display: none !important; }
+                }
+            `}</style>
+
+            <div className="h-screen bg-slate-900 flex items-center justify-center p-8 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072')] bg-cover overflow-auto">
+                <div className="bg-white/95 backdrop-blur-xl rounded-lg shadow-2xl w-full max-w-6xl h-[90vh] border border-white/20 p-8 flex gap-8 animate-in zoom-in duration-700">
+                    
+                    {/* Report Side */}
+                    <div id="no-print" className="w-1/3 border-r border-slate-200 pr-8 flex flex-col">
+                        <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2"><BrainCircuit className="text-blue-600"/> Boletim de Habilidades</h2>
+                        <div className="space-y-6 flex-1 overflow-auto pr-2">
+                            {/* Skill Bars */}
+                            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-4">
+                                <div>
+                                    <div className="flex justify-between text-xs font-bold mb-1 text-slate-600">
+                                        <span className="flex items-center gap-1"><Microscope size={14}/> Metodologia</span>
+                                        <span>{methodScore}%</span>
+                                    </div>
+                                    <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                                        <div className={`h-full rounded-full ${methodScore > 80 ? 'bg-green-500' : 'bg-yellow-500'}`} style={{width: `${methodScore}%`}}></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="flex justify-between text-xs font-bold mb-1 text-slate-600">
+                                        <span className="flex items-center gap-1"><Scale size={14}/> Ética em Pesquisa</span>
+                                        <span>{ethicsScore}%</span>
+                                    </div>
+                                    <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                                        <div className={`h-full rounded-full ${ethicsScore > 80 ? 'bg-blue-500' : 'bg-red-500'}`} style={{width: `${ethicsScore}%`}}></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="flex justify-between text-xs font-bold mb-1 text-slate-600">
+                                        <span className="flex items-center gap-1"><BarChart2 size={14}/> Bioestatística</span>
+                                        <span>{statsScore}%</span>
+                                    </div>
+                                    <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                                        <div className={`h-full rounded-full ${statsScore > 80 ? 'bg-purple-500' : 'bg-orange-500'}`} style={{width: `${statsScore}%`}}></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
+                                <h3 className="font-bold text-xs uppercase tracking-wider text-yellow-700 mb-2 flex items-center gap-2"><Lightbulb size={14}/> Feedback do Tutor</h3>
+                                <ul className="space-y-2 text-xs text-slate-700">
+                                    {gameStats.predatorySubmission && <li className="flex items-start gap-2 text-red-600">• Cuidado: Você quase publicou em revista predatória!</li>}
+                                    {gameStats.wrongDesignChoices > 0 && <li className="flex items-start gap-2">• Lembre-se: Ecológico = Dados Agregados.</li>}
+                                    {gameStats.badSearchQueries > 0 && <li className="flex items-start gap-2">• Use operadores booleanos (AND/OR) no PubMed.</li>}
+                                    <li className="flex items-start gap-2 text-green-600">• Você completou o ciclo da pesquisa com sucesso!</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <button onClick={() => setShowReviewModal(true)} className="mt-4 w-full bg-indigo-600 text-white py-2 rounded font-bold hover:bg-indigo-700 shadow flex items-center justify-center gap-2">
+                            <BookOpen size={16}/> Livro de Revisão Teórica
+                        </button>
+                    </div>
+
+                    {/* Certificate Side */}
+                    <div id="certificate-container" className="flex-1 flex flex-col items-center justify-center border-[16px] border-double border-blue-900 p-10 relative bg-white shadow-inner">
+                        <div id="no-print" className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-blue-900 text-white px-6 py-2 rounded-full font-serif font-bold tracking-widest shadow-lg">
+                            CERTIFICADO DE CONCLUSÃO
+                        </div>
+                        <Award size={100} className="text-yellow-500 mb-6 drop-shadow-md"/>
+                        <h1 className="text-5xl font-serif text-slate-900 font-bold mb-4 text-center">Parabéns, {inputUser}!</h1>
+                        <p className="text-slate-600 text-xl text-center mb-8 max-w-md">
+                            Certificamos que o aluno completou com êxito o módulo prático de:
+                        </p>
+                        <h2 className="text-4xl font-bold text-blue-900 mb-8 border-y-2 border-slate-200 py-6 text-center">Estudos Ecológicos & Dados Secundários</h2>
+                        <div className="flex gap-8 mt-auto w-full justify-center">
+                           <div className="text-center">
+                               <div className="h-px w-40 bg-black mb-2"></div>
+                               <div className="text-xs font-serif">Coordenador (a) do módulo</div>
+                           </div>
+                        </div>
+                        
+                        <div id="no-print" className="absolute top-12 right-12 flex flex-col items-center gap-2 animate-pulse">
+                             <button onClick={handlePrintCertificate} className="bg-green-600 text-white px-4 py-2 rounded font-bold shadow-lg flex items-center gap-2 hover:bg-green-700 transition-all">
+                                <Printer size={18}/> Baixar PDF
+                             </button>
+                        </div>
+                        <div className="absolute bottom-4 right-4 text-[10px] text-slate-400">Simulador de Epidemiologia</div>
+                    </div>
+                </div>
+
+                {/* Restart Button */}
+                <button id="no-print" onClick={handleRestart} className="fixed bottom-8 right-8 bg-blue-600 text-white px-6 py-3 rounded-full font-bold hover:bg-blue-700 shadow-xl flex items-center gap-2 z-50">
+                   <RotateCcw size={18}/> Reiniciar Simulação
+                </button>
+
+                {/* Review Modal */}
+                {showReviewModal && (
+                  <div id="no-print" className="absolute inset-0 bg-black/80 z-[100] flex items-center justify-center p-4">
+                      <div className="bg-white rounded-xl max-w-3xl w-full h-[80vh] overflow-y-auto p-8 animate-in zoom-in">
+                           <div className="flex justify-between items-center mb-6 border-b pb-4">
+                               <h2 className="text-2xl font-bold text-blue-900 flex items-center gap-2"><BookOpen/> Revisão Teórica: Estudos Ecológicos</h2>
+                               <button onClick={() => setShowReviewModal(false)}><XCircle size={24} className="text-slate-400 hover:text-red-500"/></button>
+                           </div>
+                           
+                           <div className="space-y-8">
+                               <section>
+                                   <h3 className="font-bold text-lg text-slate-800 mb-2 border-l-4 border-blue-500 pl-2">1. Incidência vs. Prevalência</h3>
+                                   <div className="grid grid-cols-2 gap-4 text-sm text-slate-600">
+                                       <div>
+                                           <strong>Incidência (Casos Novos)</strong>
+                                           <p>Mede o risco de adoecer. Usada em epidemias (Dengue) e doenças agudas.</p>
+                                       </div>
+                                       <div>
+                                           <strong>Prevalência (Casos Existentes)</strong>
+                                           <p>Mede a carga da doença. Usada em doenças crônicas (Diabetes, Hipertensão).</p>
+                                       </div>
+                                   </div>
+                               </section>
+
+                               <section>
+                                   <h3 className="font-bold text-lg text-slate-800 mb-2 border-l-4 border-green-500 pl-2">2. Critérios de Bradford Hill (Causalidade)</h3>
+                                   <p className="text-sm text-slate-600 mb-2">Para inferir que X causa Y, observamos 9 critérios. Os principais são:</p>
+                                   <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
+                                       <li><strong>Temporalidade (Essencial):</strong> A causa DEVE vir antes do efeito.</li>
+                                       <li><strong>Força de Associação:</strong> Quanto maior o RR/OR, mais provável ser causal.</li>
+                                       <li><strong>Gradiente Biológico:</strong> Maior exposição = Maior doença (Dose-resposta).</li>
+                                       <li><strong>Plausibilidade:</strong> Faz sentido biológico?</li>
+                                       <li><strong>Consistência:</strong> Outros estudos acharam o mesmo?</li>
+                                       <li><strong>Especificidade:</strong> Uma causa gera um efeito específico (Raro).</li>
+                                   </ul>
+                               </section>
+
+                               <section>
+                                   <h3 className="font-bold text-lg text-slate-800 mb-2 border-l-4 border-purple-500 pl-2">3. Variáveis</h3>
+                                   <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1">
+                                       <li><strong>Quantitativas (Numéricas):</strong> Contínuas (Peso, Altura) ou Discretas (Nº de filhos).</li>
+                                       <li><strong>Qualitativas (Categóricas):</strong> Nominais (Cor dos olhos, Sexo) ou Ordinais (Escolaridade, Estadiamento).</li>
+                                       <li><strong>No Gráfico:</strong> Eixo X = Independente (Causa). Eixo Y = Dependente (Efeito).</li>
+                                   </ul>
+                               </section>
+
+                               <section>
+                                   <h3 className="font-bold text-lg text-slate-800 mb-2 border-l-4 border-red-500 pl-2">4. Falácia Ecológica</h3>
+                                   <p className="text-sm text-slate-600 leading-relaxed">
+                                       É o erro de inferir que uma correlação encontrada no nível do grupo (população) se aplica necessariamente a cada indivíduo desse grupo.
+                                       <br/><em>Exemplo: Se países com maior consumo de chocolate têm mais prêmios Nobel, não significa que comer chocolate te fará ganhar um Nobel. Pode ser que países ricos comam mais chocolate E invistam mais em ciência (Fator de Confusão: Renda).</em>
+                                   </p>
+                               </section>
+                           </div>
+                           
+                           <button onClick={() => setShowReviewModal(false)} className="mt-8 w-full bg-slate-800 text-white py-3 rounded font-bold">Voltar ao Certificado</button>
+                      </div>
+                  </div>
+                )}
+            </div>
+          </>
+      );
+  }
+
+  return (
+    <div className="h-screen w-screen overflow-hidden flex flex-col relative font-sans">
+      {/* Wallpaper */}
+      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2029')] bg-cover"></div>
+
+      {popup && <EducationalPopup title={popup.title} content={popup.content} onClose={() => setPopup(null)} />}
+
+      {/* Desktop Icons */}
+      <div className="absolute top-4 left-4 flex flex-col gap-6 z-0">
+         {[
+             {id: AppID.GUIDE, icon: <BrainCircuit size={32} className="text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]"/>, label: "Chatbots IA"},
+             {id: AppID.EXPLORER, icon: <Folder size={32} className="fill-yellow-400 text-yellow-500"/>, label: "Meus Arquivos"},
+             {id: AppID.BROWSER, icon: <Globe size={32} className="text-blue-500"/>, label: "Piggle Chrome"},
+             {id: AppID.SHEET, icon: <FileSpreadsheet size={32} className="text-green-600"/>, label: "Pigxcel"},
+             {id: AppID.WORD, icon: <FileText size={32} className="text-blue-800"/>, label: "Pigword"},
+         ].map(app => (
+             <div key={app.id} onDoubleClick={() => toggleWindow(app.id)} className="flex flex-col items-center gap-1 group cursor-pointer w-24 p-2 hover:bg-white/20 rounded border border-transparent hover:border-white/30 transition-all relative">
+                 <div className={`w-14 h-14 bg-white/90 rounded-xl flex items-center justify-center shadow-lg group-active:scale-95 transition-transform backdrop-blur-sm ${getShortcutGlow(app.id)}`}>{app.icon}</div>
+                 {app.id === AppID.GUIDE && !windows[AppID.GUIDE].isOpen && (
+                     <div className="absolute top-0 right-4 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></div>
+                 )}
+                 <span className="text-white text-xs font-medium shadow-black drop-shadow-md text-center px-1 rounded line-clamp-2 leading-tight bg-black/20">{app.label}</span>
+             </div>
+         ))}
+         <div onDoubleClick={() => toggleWindow(AppID.EXPLORER, 'trash')} className="mt-auto flex flex-col items-center gap-1 group cursor-pointer w-24 p-2 hover:bg-white/20 rounded border border-transparent hover:border-white/30 transition-all">
+              <div className="w-14 h-14 bg-transparent flex items-center justify-center group-active:scale-95 transition-transform">
+                  <Trash2 size={40} className="text-slate-200 drop-shadow-md"/>
+              </div>
+              <span className="text-white text-xs font-medium shadow-black drop-shadow-md text-center px-1 rounded bg-black/20">Lixeira</span>
+         </div>
+      </div>
+
+      {/* Mission Widget */}
+      {showMissionWidget && currentScenario ? (
+          <div className="absolute top-4 right-4 z-0 max-h-[85vh] overflow-y-auto">
+               <div className="w-80 bg-slate-900/95 backdrop-blur-md border border-slate-700/60 rounded-2xl shadow-2xl p-4 animate-in slide-in-from-right-10 text-slate-100">
+                   <div className="flex items-center gap-2 mb-2 border-b border-slate-800 pb-2">
+                       <Briefcase size={15} className="text-yellow-400"/>
+                       <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest font-mono">Metas de Pesquisa</span>
+                   </div>
+                   <h3 className="font-extrabold text-white text-xs leading-tight mb-3">{currentScenario.title}</h3>
+                   
+                   {/* Step by Step checklist */}
+                   <div className="space-y-2.5 text-[11px]">
+                       {[
+                           {
+                               title: "1. Pergunta Científica (PICO/PECO)",
+                               description: "Identificar desenho e formular a pergunta estruturada.",
+                               isDone: currentStep > EcologicalStep.PICO_FORMULATION,
+                               isActive: currentStep === EcologicalStep.PICO_FORMULATION
+                           },
+                           {
+                               title: "2. Coleta de Dados (DATASUS)",
+                               description: "Abra o Piggle Chrome 🌐, acesse o DATASUS / Tabnet e baixe os dados consolidados como .CSV.",
+                               isDone: currentStep > EcologicalStep.DATA_COLLECTION,
+                               isActive: currentStep === EcologicalStep.DATA_COLLECTION
+                           },
+                           {
+                               title: "3. Análise Estatística (Pigxcel)",
+                               description: "Abra o Pigxcel 📊, processe sua planilha .CSV de Downloads e clique em 'Copiar Gráfico/Tabela'.",
+                               isDone: currentStep > EcologicalStep.ANALYSIS,
+                               isActive: currentStep === EcologicalStep.ANALYSIS
+                           },
+                           {
+                               title: "4. Fichamento Bibliográfico",
+                               description: "Abra o PubMed 📚 no navegador e salve pelo menos 2 referências científicas em seu fichário.",
+                               isDone: currentStep > EcologicalStep.WRITING || savedReferences.length >= 2,
+                               isActive: currentStep === EcologicalStep.WRITING && savedReferences.length < 2
+                           },
+                           {
+                               title: "5. Relatório Científico (Pigword)",
+                               description: "Abra o Pigword 📝, cole seus gráficos/tabelas da área de transferência e salve o manuscrito.",
+                               isDone: currentStep > EcologicalStep.WRITING,
+                               isActive: currentStep === EcologicalStep.WRITING && savedReferences.length >= 2
+                           },
+                           {
+                               title: "6. Submissão (Journal Portal)",
+                               description: "Acesse o Portal de Periódicos 🚀 no navegador e envie seu manuscrito finalizado para a revista ideal.",
+                               isDone: currentStep > EcologicalStep.JOURNAL_SUBMISSION,
+                               isActive: currentStep === EcologicalStep.JOURNAL_SUBMISSION || currentStep === EcologicalStep.SUBMISSION
+                           }
+                       ].map((meta, index) => (
+                           <div key={index} className={`p-2.5 rounded-xl border transition-all ${
+                               meta.isDone 
+                                   ? 'bg-emerald-950/20 border-emerald-900/30 text-emerald-400' 
+                                   : meta.isActive 
+                                       ? 'bg-blue-950/45 border-blue-500/50 text-blue-100 ring-2 ring-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.15)] font-semibold' 
+                                       : 'bg-slate-950/40 border-slate-900/60 text-slate-500'
+                           }`}>
+                               <div className="flex items-center gap-1.5">
+                                   <span>{meta.isDone ? "✅" : meta.isActive ? "⚡" : "🔒"}</span>
+                                   <span className={meta.isDone ? "line-through text-slate-500" : ""}>{meta.title}</span>
+                               </div>
+                               {meta.isActive && (
+                                   <p className="text-[10px] text-slate-300 mt-1 leading-relaxed pl-5 font-normal animate-in fade-in">
+                                       {meta.description}
+                                   </p>
+                               )}
+                           </div>
+                       ))}
+                   </div>
+               </div>
+          </div>
+      ) : !showMissionWidget && isLoggedIn && (
+          <div className="absolute top-4 right-4 z-0 animate-pulse cursor-pointer" onClick={() => setShowOnboarding(false)}>
+              <div className="bg-red-600 text-white px-4 py-2 rounded-full shadow-lg font-bold text-xs border-2 border-white">
+                  ⚠ Selecione um Protocolo
+              </div>
+          </div>
+      )}
+
+      {/* Windows Layer */}
+      <div className="relative flex-1 pointer-events-none z-10">
+          {(Object.values(windows) as WindowState[]).map(win => (
+              <WindowFrame
+                key={win.id}
+                windowState={win}
+                onClose={() => closeWindow(win.id)}
+                onMinimize={() => toggleWindow(win.id)}
+                onMaximize={() => setWindows(p => ({...p, [win.id]: {...p[win.id], isMaximized: !p[win.id].isMaximized}}))}
+                onFocus={() => focusWindow(win.id)}
+                onMove={(x, y) => setWindows(p => ({...p, [win.id]: {...p[win.id], position: {x, y}}}))}
+                icon={getAppIcon(win.id)}
+              >
+                  {win.id === AppID.GUIDE && <Tutor currentScenario={currentScenario} currentStep={currentStep} xp={xp} />}
+                  {win.id === AppID.BROWSER && <Browser onSaveFile={handleSaveFile} currentScenario={currentScenario} onEmailSend={handleEmailSend} fileSystem={fileSystem} emails={emails} onSaveReference={handleSaveReference} savedReferences={savedReferences} onLogAction={updateStats} onQuizComplete={(points) => setXp(p => p + points)} currentStep={currentStep} onJournalSubmit={handleJournalSubmissionSuccess} onCongressSuccess={handleCongressSuccess} onLattesSuccess={handleLattesSuccess} inputUser={inputUser}/>}
+                  {win.id === AppID.SHEET && <DataStudio fileSystem={fileSystem} setClipboard={setClipboard} onCopySuccess={handleCopySuccess} initialFile={fileToOpen} />}
+                  {win.id === AppID.WORD && <PaperWriter clipboard={clipboard} onSaveFile={handleSaveFile} savedReferences={savedReferences} />}
+                  {win.id === AppID.EXPLORER && <Explorer fileSystem={fileSystem} startPath={explorerStartPath} onOpenFile={handleOpenFileFromExplorer} onDeleteFile={handleDeleteFile} onRestoreFile={handleRestoreFile} />}
+                  {win.id === AppID.SETTINGS && (
+                      <div className="h-full bg-slate-900 text-white p-0 flex flex-col overflow-hidden relative font-mono">
+                          <div className="absolute inset-0 bg-[url('https://cdn.pixabay.com/photo/2018/05/08/08/44/artificial-intelligence-3382507_1280.jpg')] bg-cover opacity-10"></div>
+                          <div className="p-8 z-10 flex-1 flex flex-col items-center justify-center text-center">
+                             <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(59,130,246,0.5)] animate-pulse">
+                                 <Cpu size={40} className="text-white"/>
+                             </div>
+                             <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2 tracking-widest">ECOSTUDY OS</h2>
+                             <p className="text-slate-400 text-xs mb-8 tracking-[0.2em] uppercase">System Kernel v2.5.0</p>
+                             
+                             <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-xl w-full max-w-sm max-h-48 overflow-y-auto">
+                                 <h3 className="text-xs font-bold text-slate-300 uppercase mb-4 border-b border-white/10 pb-2">Creators (T7)</h3>
+                                 <ul className="space-y-3 text-sm">
+                                     <li className="flex items-center justify-between group">
+                                         <span className="text-slate-400 group-hover:text-white transition-colors">Autor</span>
+                                         <span className="font-bold text-blue-400">Thales Báccaro</span>
+                                     </li>
+                                     <li className="flex items-center justify-between group">
+                                         <span className="text-slate-400 group-hover:text-white transition-colors">Autor</span>
+                                         <span className="font-bold text-green-400">Leonardo Sartori</span>
+                                     </li>
+                                     <li className="flex items-center justify-between group">
+                                         <span className="text-slate-400 group-hover:text-white transition-colors">Autor</span>
+                                         <span className="font-bold text-purple-400">Theo Báccaro</span>
+                                     </li>
+                                 </ul>
+                             </div>
+                             <div className="mt-6 flex gap-2 text-[10px] text-slate-500">
+                                 <span className="flex items-center gap-1"><HeartPulse size={10}/> Made for PIG IV</span>
+                             </div>
+                          </div>
+                      </div>
+                  )}
+                  {win.id === AppID.BANNER && <BannerDesigner onFinish={() => handleEmailSend('BANNER_TRIGGER')}/>}
+              </WindowFrame>
+          ))}
+      </div>
+
+      {/* ... (Onboarding/Phase 1/Phase 2 Modals Remain Unchanged) ... */}
+      {!currentScenario && showOnboarding && (
+          <div className="absolute inset-0 z-[60] bg-slate-950/98 backdrop-blur-md flex items-center justify-center p-8 animate-in fade-in duration-300">
+              <div className="w-full max-w-6xl">
+                  <div className="flex items-center gap-5 mb-8 border-b border-slate-800 pb-6">
+                      <div className="bg-gradient-to-br from-yellow-400 to-amber-500 p-3 rounded-2xl text-slate-950 shadow-lg shadow-yellow-500/10">
+                        <Briefcase size={32} className="stroke-[2.5]" />
+                      </div>
+                      <div>
+                        <h2 className="text-3xl font-extrabold text-white tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">Dossiês de Protocolos de Pesquisa</h2>
+                        <p className="text-slate-400 text-sm font-light mt-1">Selecione um protocolo epidemiológico para iniciar sua investigação com dados secundários agregados.</p>
+                      </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                      {SCENARIOS.map(s => {
+                          const systemColors: Record<string, string> = {
+                              SINAN: 'from-emerald-500/20 to-teal-500/10 border-emerald-500/30 text-emerald-300',
+                              SIM: 'from-amber-500/20 to-orange-500/10 border-amber-500/30 text-amber-300',
+                              SIH: 'from-sky-500/20 to-indigo-500/10 border-sky-500/30 text-sky-300',
+                          };
+                          const systemBadge = systemColors[s.correctSystem] || 'from-slate-500/20 to-slate-600/10 border-slate-500/30 text-slate-300';
+                          return (
+                              <div 
+                                  key={s.id} 
+                                  onClick={() => handleScenarioSelect(s)} 
+                                  className="bg-slate-900/60 border border-slate-800 hover:border-yellow-500/50 hover:bg-slate-900/90 p-6 rounded-2xl cursor-pointer group transition-all duration-300 flex flex-col h-[400px] hover:-translate-y-2 shadow-2xl relative overflow-hidden"
+                              >
+                                  {/* Top Accent line */}
+                                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 opacity-60 group-hover:opacity-100 transition-opacity"></div>
+                                  
+                                  <div className="flex justify-between items-center mb-3">
+                                      <span className={`text-[10px] px-2 py-0.5 rounded-full border bg-gradient-to-r ${systemBadge} font-mono font-bold tracking-wider uppercase`}>
+                                          {s.correctSystem}
+                                      </span>
+                                      <span className="text-[10px] text-slate-500 font-mono">Dossiê {s.id.toUpperCase()}</span>
+                                  </div>
+
+                                  <h3 className="font-bold text-base text-white group-hover:text-yellow-400 transition-colors leading-snug line-clamp-3 mb-3">
+                                      {s.title}
+                                  </h3>
+                                  
+                                  <p className="text-xs text-slate-400 leading-relaxed flex-1 border-t border-slate-800 pt-3 line-clamp-5">
+                                      {s.description}
+                                  </p>
+
+                                  <div className="mt-4 pt-3 border-t border-slate-800/60 flex flex-col gap-2">
+                                      <div className="text-[10px] text-slate-500">
+                                          <strong className="text-slate-400">Palavras-chave:</strong> {s.recommendedKeywords.join(', ')}
+                                      </div>
+                                      <button className="w-full py-2.5 bg-blue-600/10 text-blue-400 border border-blue-600/20 rounded-xl text-xs font-bold group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all duration-300 flex items-center justify-center gap-2 tracking-wider shadow-sm">
+                                          <span>INICIAR DOSSIÊ</span> 
+                                          <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
+                                      </button>
+                                  </div>
+                              </div>
+                          );
+                      })}
+                  </div>
+              </div>
+          </div>
+      )}
+
+      {/* Phase 1: Design Choice */}
+      {currentScenario && currentStep === EcologicalStep.STUDY_DESIGN_CHOICE && (
+           <div className="absolute inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center">
+              <div className="bg-white rounded-2xl p-0 max-w-3xl w-full shadow-2xl animate-in zoom-in overflow-hidden flex">
+                  <div className="w-1/3 bg-slate-100 p-8 border-r border-slate-200 flex flex-col justify-center">
+                      <div className="mb-6">
+                          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Protocolo Ativo</div>
+                          <h3 className="font-bold text-xl text-blue-900">{currentScenario.title}</h3>
+                      </div>
+                      <p className="text-sm text-slate-600 leading-relaxed">Você precisa investigar a relação entre as variáveis deste tema usando dados secundários.</p>
+                  </div>
+                  <div className="flex-1 p-8 flex flex-col">
+                    <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2"><Lightbulb className="text-yellow-500"/> Fase 1: Desenho Metodológico</h2>
+                    {!designFeedback ? (
+                        <>
+                            <div className="space-y-3 flex-1">
+                                {['coorte', 'ecologico', 'clinico'].map((type) => (
+                                    <button 
+                                        key={type}
+                                        onClick={() => setSelectedDesign(type)} 
+                                        className={`w-full p-4 border rounded-xl text-left transition-all ${
+                                            selectedDesign === type 
+                                            ? 'bg-blue-600 text-white border-blue-600 ring-2 ring-blue-300' 
+                                            : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+                                        }`}
+                                    >
+                                        <span className="font-bold block mb-1">
+                                            {type === 'coorte' ? 'Estudo de Coorte' : type === 'ecologico' ? 'Estudo Ecológico' : 'Ensaio Clínico'}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                            <button 
+                                onClick={confirmDesignChoice} 
+                                disabled={!selectedDesign}
+                                className="mt-6 w-full bg-slate-800 text-white py-3 rounded-lg font-bold disabled:opacity-50 hover:bg-slate-900"
+                            >
+                                Confirmar Escolha
+                            </button>
+                        </>
+                    ) : (
+                        <div className="flex-1 flex flex-col items-center justify-center text-center animate-in fade-in">
+                            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${designFeedback.correct ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                                {designFeedback.correct ? <CheckCircle size={32}/> : <XCircle size={32}/>}
+                            </div>
+                            <h3 className={`text-xl font-bold mb-2 ${designFeedback.correct ? 'text-green-800' : 'text-red-800'}`}>
+                                {designFeedback.correct ? 'Correto!' : 'Incorreto'}
+                            </h3>
+                            <p className="text-slate-600 mb-6">{designFeedback.msg}</p>
+                            {!designFeedback.correct && (
+                                <button onClick={() => {setDesignFeedback(null); setSelectedDesign(null);}} className="text-sm font-bold text-blue-600 hover:underline">
+                                    Tentar Novamente
+                                </button>
+                            )}
+                        </div>
+                    )}
+                  </div>
+              </div>
+          </div>
+      )}
+
+      {/* Phase 2: PICO Form */}
+      {currentScenario && currentStep === EcologicalStep.PICO_FORMULATION && !popup && (
+          <div className="absolute inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center">
+              <div className="bg-white rounded-2xl p-8 max-w-2xl w-full shadow-2xl animate-in zoom-in border-t-8 border-yellow-400 relative">
+                  <div className="absolute -top-6 left-8 bg-yellow-400 text-blue-900 px-4 py-1 rounded-full font-bold text-sm shadow-md flex items-center gap-2">
+                      <Briefcase size={16}/> Fase 2: Estratégia PICO / PECO
+                  </div>
+                  <div className="flex justify-between items-start mb-6 mt-2">
+                      <p className="text-sm text-slate-600">Defina os elementos da pesquisa para o tema <strong>"{currentScenario.title}"</strong>.</p>
+                      <button onClick={() => setShowPicoTutorial(true)} className="text-xs font-bold text-blue-600 flex items-center gap-1 hover:underline"><HelpCircle size={14}/> Como preencher?</button>
+                  </div>
+                  
+                  <div className="space-y-4 bg-slate-50 p-6 rounded-xl border border-slate-200">
+                      <div className="grid grid-cols-1 gap-4">
+                        <div>
+                            <label className="flex items-center gap-2 text-xs font-bold text-blue-800 mb-1"><User size={12}/> P (População - Agregado)</label>
+                            <input value={picoP} onChange={e=>setPicoP(e.target.value)} className="w-full border border-slate-300 p-3 rounded-lg text-sm focus:ring-2 ring-blue-200 outline-none" placeholder="Ex: Municípios do Estado de SP..."/>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-blue-800 mb-1">I (Intervenção) ou E (Exposição)</label>
+                                <input value={picoI} onChange={e=>setPicoI(e.target.value)} className="w-full border border-slate-300 p-3 rounded-lg text-sm focus:ring-2 ring-blue-200 outline-none" placeholder="Ex: Alta urbanização..."/>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-blue-800 mb-1">C (Comparação)</label>
+                                <input value={picoC} onChange={e=>setPicoC(e.target.value)} className="w-full border border-slate-300 p-3 rounded-lg text-sm focus:ring-2 ring-blue-200 outline-none" placeholder="Ex: Baixa urbanização..."/>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-blue-800 mb-1">O (Desfecho/Outcome)</label>
+                            <input value={picoO} onChange={e=>setPicoO(e.target.value)} className="w-full border border-slate-300 p-3 rounded-lg text-sm focus:ring-2 ring-blue-200 outline-none" placeholder="Ex: Incidência de Dengue..."/>
+                        </div>
+                      </div>
+                  </div>
+                  {picoFeedback && (
+                      <div className="mt-4 bg-red-50 border-l-4 border-red-500 text-red-800 p-4 rounded text-sm flex items-start gap-3">
+                          <AlertTriangle className="shrink-0 mt-0.5" size={18}/>
+                          <div>
+                            <strong>Atenção:</strong> {picoFeedback}
+                          </div>
+                      </div>
+                  )}
+                  <button 
+                    onClick={handlePICOSubmit} 
+                    disabled={picoLoading || !picoP || !picoO}
+                    className="mt-6 w-full bg-blue-600 disabled:bg-slate-300 text-white py-4 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg flex justify-center items-center gap-2 text-lg"
+                  >
+                      {picoLoading ? "Analisando compatibilidade..." : "Validar Estratégia"} {picoLoading ? '' : <CheckCircle size={20}/>}
+                  </button>
+              </div>
+          </div>
+      )}
+
+      {/* PICO Tutorial Modal */}
+      {showPicoTutorial && (
+          <div className="absolute inset-0 z-[70] bg-black/60 flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl max-w-lg w-full p-6 animate-in zoom-in">
+                  <div className="flex justify-between mb-4">
+                      <h3 className="font-bold text-lg text-blue-900">Guia PICO vs PECO</h3>
+                      <button onClick={() => setShowPicoTutorial(false)}><XCircle size={20} className="text-slate-400"/></button>
+                  </div>
+                  <div className="space-y-4 text-sm text-slate-700">
+                      <p>Em estudos ecológicos (baseados em dados secundários), nós geralmente não fazemos uma intervenção clínica (dar remédio). Nós observamos uma <strong>EXPOSIÇÃO</strong>.</p>
+                      <div className="bg-blue-50 p-3 rounded border border-blue-100">
+                          <strong className="block mb-1 text-blue-800">Exemplo Correto (Ecológico):</strong>
+                          <ul className="list-disc pl-4 space-y-1">
+                              <li><strong>P:</strong> Municípios do Acre</li>
+                              <li><strong>E (Exposição):</strong> Expostos à fumaça de queimadas</li>
+                              <li><strong>C (Comparação):</strong> Não expostos (ou menos expostos)</li>
+                              <li><strong>O (Desfecho):</strong> Internações por Asma</li>
+                          </ul>
+                      </div>
+                      <div className="bg-red-50 p-3 rounded border border-red-100">
+                          <strong className="block mb-1 text-red-800">Exemplo Errado (Clínico):</strong>
+                          <p>Dar remédio X para Paciente Y. (Isso não se aplica aqui pois usamos dados agregados do DATASUS).</p>
+                      </div>
+                  </div>
+                  <button onClick={() => setShowPicoTutorial(false)} className="w-full bg-slate-800 text-white py-2 rounded mt-6 font-bold">Entendi</button>
+              </div>
+          </div>
+      )}
+
+      {/* Taskbar */}
+      <div className="h-12 bg-slate-900/95 backdrop-blur text-white flex items-center px-4 z-50 gap-2 shadow-[0_-2px_10px_rgba(0,0,0,0.5)]">
+         <button onClick={() => setMenuOpen(!menuOpen)} className={`p-2 rounded transition-all ${menuOpen ? 'bg-white/20' : 'hover:bg-white/10'}`}><Monitor size={20}/></button>
+         <div className="h-6 w-px bg-white/20 mx-2"></div>
+         {(Object.values(windows) as WindowState[]).filter(w => w.isOpen).map(w => (
+             <button key={w.id} onClick={() => toggleWindow(w.id)} className={`h-9 px-3 rounded text-xs font-medium flex items-center gap-2 transition-all border-b-2 ${activeAppId === w.id && !w.isMinimized ? 'bg-white/10 border-blue-400' : 'hover:bg-white/5 border-transparent text-slate-300'}`}>
+                 <div className="w-4 h-4 bg-white rounded flex items-center justify-center text-slate-900 font-bold text-[8px]">
+                    {w.id.charAt(0).toUpperCase()}
+                 </div> 
+                 <span className="max-w-[100px] truncate">{w.title}</span>
+             </button>
+         ))}
+         <div className="flex-1"></div>
+         <div className="flex items-center gap-3 text-xs font-medium text-slate-300 bg-white/5 px-3 py-1 rounded-full border border-white/10">
+             <Award size={14} className="text-yellow-400"/>
+             <span>XP: {xp}</span>
+         </div>
+         <div className="w-px h-6 bg-white/20 mx-2"></div>
+         <div className="text-xs font-mono text-slate-300">{new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</div>
+      </div>
+      {/* Start Menu Logic ... (Unchanged) */}
+      {menuOpen && (
+          <div className="absolute bottom-14 left-2 w-72 bg-slate-800/95 backdrop-blur-md text-white rounded-lg shadow-2xl border border-white/20 z-[70] overflow-hidden animate-in slide-in-from-bottom-5">
+              <div className="p-4 bg-slate-900 border-b border-white/10 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center font-bold text-lg">{inputUser.charAt(0).toUpperCase()}</div>
+                  <div>
+                      <div className="font-bold text-sm">{inputUser || 'Aluno'}</div>
+                      <div className="text-[10px] text-slate-400">Faculdade de Medicina</div>
+                  </div>
+              </div>
+              <div className="p-2 space-y-1">
+                  {[
+                      {id: AppID.GUIDE, label: "Chatbots de Pesquisa IA"},
+                      {id: AppID.EXPLORER, label: "Explorador de Arquivos"},
+                      {id: AppID.BROWSER, label: "Piggle Chrome"},
+                      {id: AppID.SHEET, label: "Pigxcel"},
+                      {id: AppID.WORD, label: "Pigword"},
+                      {id: AppID.SETTINGS, label: "Sobre o Sistema"},
+                  ].map(item => (
+                      <button key={item.id} onClick={() => toggleWindow(item.id as AppID)} className="w-full text-left p-2 hover:bg-white/10 rounded-md text-sm flex items-center gap-3 transition-colors">
+                           <PlayCircle size={14} className="text-blue-400"/> {item.label}
+                      </button>
+                  ))}
+              </div>
+              <div className="border-t border-white/10 p-2 bg-slate-900/50">
+                  <button onClick={handleRestart} className="w-full text-left p-2 hover:bg-red-500/20 hover:text-red-200 rounded-md text-sm flex items-center gap-3 text-slate-300 transition-colors">
+                      <Power size={14}/> Desligar Sistema
+                  </button>
+              </div>
+          </div>
+      )}
+    </div>
+  );
+};
+
+export default App;
