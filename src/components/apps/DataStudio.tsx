@@ -201,7 +201,7 @@ export const DataStudio: React.FC<DataStudioProps> = ({
               Desafio de Bioestatística
             </h3>
             <p className="text-sm text-slate-200 mb-6">
-              Para validar seus dados estatísticos (p &lt; 0.05 e Correlação), responda corretamente:
+              Para validar a interpretação estatística, responda corretamente:
               <br/><br/>
               <strong>O que significa um p-valor menor que 0.05 em um estudo estatístico?</strong>
             </p>
@@ -210,7 +210,7 @@ export const DataStudio: React.FC<DataStudioProps> = ({
                 onClick={() => handleQuizSubmit(true)}
                 className="w-full text-left p-3 rounded-lg border border-slate-700 hover:border-emerald-500 hover:bg-emerald-950/30 text-sm transition-all"
               >
-                A) Rejeita-se a Hipótese Nula (existe associação significativa).
+                A) Com α = 0,05, os dados são pouco compatíveis com H0 e podemos rejeitá-la, se os pressupostos do teste forem adequados; isso não prova causalidade.
               </button>
               <button 
                 onClick={() => handleQuizSubmit(false)}
@@ -430,14 +430,14 @@ export const DataStudio: React.FC<DataStudioProps> = ({
                     </div>
                   </div>
 
-                  <div className="bg-green-600/10 border border-green-500/20 rounded-lg p-3 text-[11px] text-green-400 leading-relaxed">
-                    <strong>Intepretação Científica:</strong> {stats.correlation > 0.8 ? (
-                      "Há uma correlação forte e positiva no período avaliado. A hipótese de crescimento local se sustenta."
-                    ) : stats.correlation < -0.8 ? (
-                      "Correlação forte e negativa no período. Excelente indicativo de declínio sustentado."
-                    ) : (
-                      "Correlação moderada ou fraca. Indica estabilidade temporal ou alta flutuação de casos por ano."
-                    )}
+                  <div className="bg-green-600/10 border border-green-500/20 rounded-lg p-3 text-[11px] text-green-300 leading-relaxed">
+                    <strong>Interpretação científica:</strong>{' '}
+                    {Math.abs(stats.correlation) >= 0.7
+                      ? `A série mostra relação linear ${stats.correlation >= 0 ? 'positiva' : 'negativa'} forte entre ano e o indicador neste local.`
+                      : Math.abs(stats.correlation) >= 0.4
+                        ? `A série mostra relação linear ${stats.correlation >= 0 ? 'positiva' : 'negativa'} moderada entre ano e o indicador.`
+                        : 'A relação linear entre ano e o indicador é fraca nesta série.'}
+                    {' '}O valor de r não prova causalidade nem substitui intervalo de confiança ou teste de hipótese; outliers, não linearidade, poucos anos e mudanças de registro podem alterar o resultado.
                   </div>
                 </div>
               )}
@@ -458,8 +458,7 @@ export const DataStudio: React.FC<DataStudioProps> = ({
                 {showFormulaInfo && (
                   <div className="bg-slate-900 border border-slate-800 p-3 rounded-lg text-[10px] text-slate-400 leading-relaxed animate-in fade-in">
                     <Sigma size={12} className="inline mr-1 text-yellow-500" />
-                    <strong>Pearson (r)</strong> mede a força da correlação linear (varia de -1 a 1). 
-                    A linha verde-tracejada no gráfico representa a <strong>Média Global</strong> do período da série histórica.
+                    <strong>Pearson (r)</strong> varia de −1 a +1 e resume direção e intensidade de uma relação <em>linear</em> entre duas variáveis quantitativas. Perto de zero significa pouca relação linear, não necessariamente ausência de qualquer relação. <strong>Spearman (ρ)</strong> usa postos e pode ser preferível para relação monotônica, dados ordinais ou forte influência de valores extremos. Nenhum deles demonstra causa e efeito. A linha verde tracejada representa a <strong>média do período</strong>.
                   </div>
                 )}
 

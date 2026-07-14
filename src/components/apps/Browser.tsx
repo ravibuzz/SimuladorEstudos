@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, ArrowLeft, ArrowRight, RefreshCw, Download, Lock, Mail, Send, Paperclip, FileText, X, Globe, ShieldCheck, Inbox, BookOpen, Loader2, Info, Quote, ExternalLink, HelpCircle, CheckCircle, AlertCircle, Bookmark, BookmarkCheck, Book, GraduationCap, DollarSign, ThumbsUp, ThumbsDown, Trash2, AlertTriangle, Award, XCircle, Youtube, Gamepad2 } from 'lucide-react';
+import { Search, ArrowLeft, ArrowRight, RefreshCw, Download, Lock, Mail, Send, Paperclip, FileText, X, Globe, ShieldCheck, Inbox, BookOpen, Loader2, Info, Quote, ExternalLink, HelpCircle, CheckCircle, AlertCircle, Bookmark, BookmarkCheck, Book, GraduationCap, DollarSign, ThumbsUp, ThumbsDown, Trash2, AlertTriangle, Award, XCircle, Youtube, Gamepad2, Database, Microscope, MailCheck, Radio, Trophy, UserRound, CalendarDays, Presentation, FolderKanban } from 'lucide-react';
 import { generateTabnetData, searchPubMed } from '../../services/geminiService';
 import { TabnetData, ArticleHit, VirtualFile, Scenario, Email, GameStats, EcologicalStep } from '../../types';
 
@@ -19,6 +19,7 @@ interface BrowserProps {
   onCongressSuccess?: () => void;
   onLattesSuccess?: () => void;
   inputUser?: string;
+  bannerCompleted?: boolean;
 }
 
 // Updated Educational Emails with Quizzes
@@ -61,10 +62,48 @@ const EDUCATIONAL_EMAILS: Email[] = [
         }
     },
     {
+        id: 'quizPearson',
+        from: 'Profa. Bioestatística',
+        subject: 'Quiz: o que o r de Pearson realmente informa?',
+        body: 'O coeficiente de Pearson resume a direção e a intensidade de uma relação linear entre duas variáveis quantitativas. Ele não prova causalidade e, sozinho, não informa significância estatística.',
+        read: false,
+        date: new Date(Date.now() - 8200000),
+        quiz: {
+            question: 'Um estudo ecológico encontrou r = 0,78 entre ano e taxa de internação. Qual interpretação é mais adequada?',
+            options: [
+                'O passar do tempo causou as internações.',
+                'Há forte relação linear positiva nos dados analisados, mas é preciso avaliar incerteza, qualidade dos dados, confundimento e não inferir causalidade.',
+                '78% dos pacientes foram internados.',
+                'O resultado é significativo porque r é maior que zero.'
+            ],
+            correctIdx: 1,
+            explanation: 'Isso mesmo. O sinal indica a direção e o módulo indica a intensidade linear. Causalidade e significância exigem outras evidências; em dados agregados também existe risco de falácia ecológica.'
+        }
+    },
+    {
+        id: 'quizEcological',
+        from: 'Prof. Epidemiologia',
+        subject: 'Caso rápido: falácia ecológica',
+        body: 'Estudos ecológicos com DATASUS são muito úteis para gerar hipóteses, comparar territórios e acompanhar tendências. O cuidado é não transferir automaticamente uma associação do grupo para cada indivíduo.',
+        read: false,
+        date: new Date(Date.now() - 9000000),
+        quiz: {
+            question: 'Municípios com maior cobertura de atenção básica tiveram menos internações. O que NÃO se pode concluir apenas com esse resultado?',
+            options: [
+                'Que existe uma associação no nível municipal.',
+                'Que todo indivíduo atendido pela atenção básica teve menor risco de internação por causa do atendimento.',
+                'Que a associação merece investigação com controle de confundidores.',
+                'Que diferenças de registro e composição populacional podem influenciar o achado.'
+            ],
+            correctIdx: 1,
+            explanation: 'Perfeito. A unidade de análise é o município; concluir sobre indivíduos seria falácia ecológica.'
+        }
+    },
+    {
         id: 'edu_cep',
         from: 'Comitê de Ética (CEP)',
-        subject: 'Memorando: Dispensa de TCLE',
-        body: 'Prezados pesquisadores,\n\nEsclarecemos que conforme a Resolução CNS nº 510/2016, pesquisas que utilizam APENAS dados de domínio público que não identifiquem os participantes (como os dados agregados do DATASUS/TabNet que vocês estão usando) não precisam de registro nem avaliação pelo sistema CEP/CONEP.\n\nAtenciosamente,\nCoordenação do CEP.',
+        subject: 'Ética: dados públicos e agregados',
+        body: 'Prezados pesquisadores,\n\nA Resolução CNS nº 674/2022 prevê dispensa de apreciação pelo Sistema CEP/Conep quando a pesquisa usa exclusivamente informações de acesso/domínio público ou dados já disponibilizados de forma agregada, sem possibilidade de identificação individual. Isso se aplica ao cenário simulado com tabelas públicas agregadas do DATASUS.\n\nA dispensa não autoriza tentar reidentificar pessoas nem elimina deveres de integridade, privacidade e segurança. Em um projeto real, confirme o enquadramento com o orientador e as regras institucionais, especialmente se houver vinculação de bases, dados individuais ou acesso restrito.\n\nAtenciosamente,\nCoordenação do CEP.',
         read: false,
         date: new Date(Date.now() - 10000000)
     },
@@ -80,13 +119,13 @@ const EDUCATIONAL_EMAILS: Email[] = [
         id: 'edu_predatoria',
         from: 'Biblioteca Central',
         subject: 'ALERTA URGENTE: Revistas Predatórias',
-        body: 'Identificamos alunos submetendo artigos em revistas fraudulentas (Predatórias). \n\nSinais de perigo:\n1. Cobrança de taxas abusivas (APCs) antes do aceite.\n2. Promessa de publicação "Fast Track" em 24h/48h.\n3. Falta de revisão por pares real.\n4. Títulos genéricos (Ex: "Global Journal of Science").\n\nPublicar nessas revistas "queima" seu currículo Lattes. Verifiquem sempre o Qualis Capes ou o DOAJ.',
+        body: 'Identificamos alunos considerando periódicos potencialmente predatórios.\n\nSinais de alerta:\n1. Taxas e políticas editoriais pouco transparentes.\n2. Promessa irreal de aceite ou publicação em 24h/48h.\n3. Ausência de revisão por pares e de corpo editorial verificável.\n4. Site que imita outro periódico ou faz alegações falsas de indexação.\n\nAntes de submeter, confira escopo, instruções, indexação diretamente na base citada, transparência de taxas e boas práticas editoriais. Diretórios como o DOAJ podem ajudar, mas nenhum indicador isolado substitui a avaliação crítica.',
         read: false,
         date: new Date(Date.now() - 15000000)
     }
 ];
 
-export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, onEmailSend, fileSystem, emails, onSaveReference, savedReferences, onLogAction, onQuizComplete, currentStep, onJournalSubmit, onCongressSuccess, onLattesSuccess, inputUser }) => {
+export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, onEmailSend, fileSystem, emails, onSaveReference, savedReferences, onLogAction, onQuizComplete, currentStep, onJournalSubmit, onCongressSuccess, onLattesSuccess, inputUser, bannerCompleted = false }) => {
   const [history, setHistory] = useState<string[]>(['home']);
   const [historyIndex, setHistoryIndex] = useState(0);
   
@@ -130,6 +169,9 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
   const [attachment, setAttachment] = useState<VirtualFile | null>(null);
   const [showAttachModal, setShowAttachModal] = useState(false);
   const [showChecklist, setShowChecklist] = useState(false);
+  const [readEmailIds, setReadEmailIds] = useState<string[]>([]);
+  const [deletedEmailIds, setDeletedEmailIds] = useState<string[]>([]);
+  const [solvedQuizIds, setSolvedQuizIds] = useState<string[]>([]);
   
   // Custom tabs states
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -141,7 +183,8 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
   const [pigamesScore, setPigamesScore] = useState(0);
   const [pigamesLives, setPigamesLives] = useState(3);
   const [pigamesCompletedCount, setPigamesCompletedCount] = useState<string[]>([]);
-  const [lattesRegistered, setLattesRegistered] = useState(false);
+  const [pigamesSequence, setPigamesSequence] = useState<number[]>([]);
+  const [lattesItems, setLattesItems] = useState<string[]>([]);
   const [congressRegistered, setCongressRegistered] = useState(false);
   const [congressError, setCongressError] = useState('');
   const [emailChecklist, setEmailChecklist] = useState({ attach: false, subject: false, review: false });
@@ -159,7 +202,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
 
   const renderCongress = () => (
       <div className="bg-slate-50 h-full text-slate-800 flex flex-col overflow-y-auto font-sans">
-          <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white p-4 flex justify-between items-center shrink-0 shadow-md">
+          <div className="bg-gradient-to-r from-orange-600 via-amber-600 to-red-600 text-white p-4 flex justify-between items-center shrink-0 shadow-md">
               <div className="flex items-center gap-3">
                   <Globe size={32} />
                   <div>
@@ -169,7 +212,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
               </div>
           </div>
           
-          <div className="flex-1 p-8 max-w-4xl mx-auto w-full">
+          <div className="flex-1 p-4 md:p-8 max-w-5xl mx-auto w-full">
               {currentStep < EcologicalStep.CONGRESS_SUBMISSION ? (
                   <div className="flex flex-col items-center justify-center text-center mt-20">
                       <Lock size={48} className="text-slate-400 mb-4" />
@@ -184,16 +227,23 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                           <CheckCircle size={48} className="text-green-600"/>
                       </div>
                       <h2 className="text-3xl font-bold text-slate-800 mb-4">Inscrição Aprovada!</h2>
-                      <p className="text-slate-600 mb-8 max-w-lg mx-auto">
-                          Seu artigo foi aceito para apresentação oral no Congresso Brasileiro de Saúde Pública. Prepare seu banner!
-                      </p>
+                       <p className="text-slate-600 mb-4 max-w-lg mx-auto">
+                           Seu trabalho foi aceito no Congresso Brasileiro de Saúde Pública & Epidemiologia. O banner já está pronto; falta registrar no Currículo Lattes as etapas do projeto.
+                       </p>
+                       <div className="mx-auto mb-7 max-w-lg rounded-lg border border-blue-200 bg-blue-50 p-3 text-left text-xs text-blue-900">
+                           No Lattes, cadastre projeto, artigo, banner e participação no congresso. Só depois você decide se quer encerrar o jogo ou continuar explorando.
+                       </div>
                       <button onClick={() => navigate('lattes')} className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-lg shadow-lg">
                           Ir para o Currículo Lattes
                       </button>
                   </div>
               ) : (
                   <div>
-                      <h2 className="text-2xl font-bold text-slate-800 mb-6">Congressos com Inscrições Abertas</h2>
+                      <div className="mb-6">
+                          <p className="text-xs font-bold uppercase tracking-widest text-orange-600">Desafio de adequação ao escopo</p>
+                          <h2 className="text-2xl font-bold text-slate-800">Escolha onde apresentar seu estudo</h2>
+                          <p className="mt-2 text-sm text-slate-600">Compare tema, público e tipo de trabalho aceito. Um congresso prestigiado não é automaticamente adequado: o evento precisa conversar com sua pergunta e seu método.</p>
+                      </div>
                       {congressError && (
                           <div className="bg-red-50 border border-red-300 text-red-800 p-4 rounded-lg mb-6 flex items-start gap-3">
                               <AlertCircle size={20} className="shrink-0 mt-0.5" />
@@ -201,10 +251,16 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                           </div>
                       )}
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="mb-5 grid grid-cols-1 gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-950 md:grid-cols-3">
+                          <div><strong className="block">1. Escopo</strong> O evento aceita epidemiologia e saúde coletiva?</div>
+                          <div><strong className="block">2. Público</strong> Os resultados interessam a gestores e profissionais?</div>
+                          <div><strong className="block">3. Formato</strong> O edital aceita estudo ecológico e dados secundários?</div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                           {/* Irrelevant Congress */}
                           <div className="bg-white rounded-xl shadow-md border border-slate-200 p-6 flex flex-col">
-                              <div className="bg-blue-100 text-blue-800 text-[10px] font-bold px-3 py-1 rounded w-max mb-3">Pesquisa Básica</div>
+                              <div className="flex items-center justify-between gap-2 mb-3"><div className="bg-blue-100 text-blue-800 text-[10px] font-bold px-3 py-1 rounded w-max">Pesquisa Básica</div><span className="text-[10px] font-bold text-red-600">ADEQUAÇÃO BAIXA</span></div>
                               <h3 className="text-lg font-bold text-slate-800 mb-2">Simpósio Internacional de Neurocirurgia e Nanotecnologia</h3>
                               <p className="text-sm text-slate-600 mb-6 flex-1">
                                   Foco exclusivo em estudos moleculares, ensaios in vitro e técnicas cirúrgicas robóticas.
@@ -214,13 +270,22 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                               </button>
                           </div>
 
+                          <div className="bg-white rounded-xl shadow-md border border-slate-200 p-6 flex flex-col">
+                              <div className="flex items-center justify-between gap-2 mb-3"><div className="bg-violet-100 text-violet-800 text-[10px] font-bold px-3 py-1 rounded w-max">Clínica Hospitalar</div><span className="text-[10px] font-bold text-amber-600">ADEQUAÇÃO PARCIAL</span></div>
+                              <h3 className="text-lg font-bold text-slate-800 mb-2">Jornada de Atualização em Clínica Médica</h3>
+                              <p className="text-sm text-slate-600 mb-4 flex-1">Aceita pesquisas clínicas, mas prioriza séries de casos e condutas assistenciais, com pouco espaço para políticas públicas.</p>
+                              <div className="mb-4 text-[11px] text-slate-500">Público compatível, porém escopo metodológico limitado.</div>
+                              <button onClick={() => handleCongressSubmit(false)} className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-2 rounded border border-slate-300">Submeter Trabalho</button>
+                          </div>
+
                           {/* Relevant Congress */}
                           <div className="bg-white rounded-xl shadow-md border border-slate-200 p-6 flex flex-col">
-                              <div className="bg-green-100 text-green-800 text-[10px] font-bold px-3 py-1 rounded w-max mb-3">Saúde Coletiva</div>
+                              <div className="flex items-center justify-between gap-2 mb-3"><div className="bg-green-100 text-green-800 text-[10px] font-bold px-3 py-1 rounded w-max">Saúde Coletiva</div><span className="text-[10px] font-bold text-green-600">MELHOR ADEQUAÇÃO</span></div>
                               <h3 className="text-lg font-bold text-slate-800 mb-2">Congresso Brasileiro de Saúde Pública & Epidemiologia</h3>
                               <p className="text-sm text-slate-600 mb-6 flex-1">
-                                  Foco em estudos populacionais, análises de dados secundários (DATASUS) e políticas públicas de saúde.
-                              </p>
+                                  Foco em estudos populacionais, análises de dados secundários (DATASUS), vigilância e políticas públicas de saúde.
+                               </p>
+                              <div className="mb-4 flex flex-wrap gap-1.5 text-[10px]"><span className="rounded-full bg-green-50 px-2 py-1 text-green-700">Escopo ✓</span><span className="rounded-full bg-green-50 px-2 py-1 text-green-700">Público ✓</span><span className="rounded-full bg-green-50 px-2 py-1 text-green-700">Método ✓</span></div>
                               <button onClick={() => handleCongressSubmit(true)} className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded shadow">
                                   Submeter Trabalho
                               </button>
@@ -239,12 +304,19 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
           return acc;
       }, [] as Email[]);
       
-      return merged.sort((a,b) => {
+      return merged
+        .filter(email => !deletedEmailIds.includes(email.id))
+        .map(email => ({
+            ...email,
+            read: email.read || readEmailIds.includes(email.id),
+            quizSolved: email.quizSolved || solvedQuizIds.includes(email.id)
+        }))
+        .sort((a,b) => {
           const timeA = new Date(a.date).getTime() || 0;
           const timeB = new Date(b.date).getTime() || 0;
           return timeB - timeA;
       });
-  }, [emails]);
+  }, [emails, readEmailIds, deletedEmailIds, solvedQuizIds]);
 
   // Quiz within Email
   const [quizSelectedOption, setQuizSelectedOption] = useState<number | null>(null);
@@ -258,7 +330,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
       if(state === 'home') return 'https://piggle.com';
       if(state === 'datasus') return 'https://datasus.saude.gov.br/tabnet';
       if(state === 'pubmed') return 'https://pubmed.ncbi.nlm.nih.gov';
-      if(state === 'mail') return 'https://webmail.pig4.med.br';
+      if(state === 'mail') return 'https://pigmail.pig4.med.br';
       if(state === 'journal') return 'https://periodicos.capes.gov.br/submissao';
       if(state === 'youtube') return 'https://youtube.com/c/mandictalks';
       if(state === 'pigames') return 'https://pigames.com.br';
@@ -391,7 +463,9 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
 
   // --- MAIL LOGIC ---
   const openEmail = (email: Email) => {
-      setSelectedEmail(email);
+      const openedEmail = { ...email, read: true };
+      setReadEmailIds(prev => prev.includes(email.id) ? prev : [...prev, email.id]);
+      setSelectedEmail(openedEmail);
       setMailView('read');
       setQuizSelectedOption(null);
       setQuizFeedback(null);
@@ -404,11 +478,20 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
           setQuizFeedback("Correto! " + selectedEmail.quiz.explanation);
           if (!selectedEmail.quizSolved) {
               onQuizComplete(30);
+              setSolvedQuizIds(prev => prev.includes(selectedEmail.id) ? prev : [...prev, selectedEmail.id]);
+              setSelectedEmail(prev => prev ? { ...prev, quizSolved: true } : prev);
           }
       } else {
           setQuizFeedback("Incorreto. Tente novamente.");
           onLogAction('quizMistakes');
       }
+  };
+
+  const handleDeleteEmail = () => {
+      if (!selectedEmail) return;
+      setDeletedEmailIds(prev => prev.includes(selectedEmail.id) ? prev : [...prev, selectedEmail.id]);
+      setSelectedEmail(null);
+      setMailView('inbox');
   };
 
   const handleChecklistSubmit = () => {
@@ -1001,17 +1084,17 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
   );
   
   const renderMail = () => (
-      <div className="flex h-full bg-white font-sans">
-          <div className="w-64 bg-[#f3f4f6] border-r border-slate-200 flex flex-col">
+      <div className="flex h-full bg-white font-sans overflow-hidden">
+          <div className={`${mailView === 'inbox' ? 'w-20 sm:w-64' : 'hidden sm:flex sm:w-64'} bg-[#f3f4f6] border-r border-slate-200 flex-col shrink-0`}>
               <div className="p-4">
                    <button onClick={() => setMailView('compose')} className="w-full bg-[#0078d4] text-white py-2 rounded-sm shadow hover:bg-[#106ebe] flex items-center justify-center gap-2 font-semibold text-sm">
-                      <Send size={14} /> Nova Mensagem
+                      <Send size={14} /> <span className="hidden sm:inline">Nova Mensagem</span>
                   </button>
               </div>
               <div className="flex-1 overflow-y-auto">
                   <div className="px-4 py-2 text-xs font-bold text-slate-500 uppercase">Favoritos</div>
                   <div onClick={() => setMailView('inbox')} className={`px-4 py-2 cursor-pointer flex justify-between items-center text-sm ${mailView === 'inbox' ? 'bg-white text-[#0078d4] font-semibold border-l-4 border-[#0078d4]' : 'text-slate-700 hover:bg-slate-200'}`}>
-                      <span className="flex items-center gap-2"><Inbox size={16}/> Caixa de Entrada</span>
+                      <span className="flex items-center gap-2"><Inbox size={16}/><span className="hidden sm:inline">Caixa de Entrada</span></span>
                       <span className="text-[#0078d4] text-xs font-bold">{allEmails.filter(e => !e.read).length}</span>
                   </div>
               </div>
@@ -1041,7 +1124,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                   <div className="border-b p-4 flex justify-between items-center bg-slate-50">
                       <button onClick={() => setMailView('inbox')} className="text-slate-500 hover:text-blue-600 flex items-center gap-1 text-sm font-bold"><ArrowLeft size={14}/> Voltar</button>
                       <div className="flex gap-2">
-                          <button className="p-1.5 hover:bg-slate-200 rounded text-slate-500"><Trash2 size={16}/></button>
+                          <button aria-label="Excluir e-mail" title="Excluir e-mail" onClick={handleDeleteEmail} className="p-1.5 hover:bg-red-100 rounded text-slate-500 hover:text-red-600"><Trash2 size={16}/></button>
                       </div>
                   </div>
                   <div className="p-6 overflow-y-auto flex-1">
@@ -1093,7 +1176,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                       {selectedEmail.hasAction && selectedEmail.actionLabel && (
                           <div className="mt-8 border-t pt-6">
                               <button 
-                                onClick={() => onEmailSend('BANNER_TRIGGER')} 
+                                onClick={() => onEmailSend('OPEN_BANNER')}
                                 className="bg-green-600 text-white px-6 py-3 rounded font-bold hover:bg-green-700 shadow-lg flex items-center gap-2 animate-pulse"
                               >
                                   <ExternalLink size={16}/> {selectedEmail.actionLabel}
@@ -1165,7 +1248,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                           </label>
                           <label className={`flex items-center gap-3 p-3 border rounded cursor-pointer transition-colors ${emailChecklist.review ? 'bg-green-50 border-green-200' : 'hover:bg-slate-50'}`}>
                               <input type="checkbox" checked={emailChecklist.review} onChange={(e) => setEmailChecklist(p => ({...p, review: e.target.checked}))} className="w-4 h-4 accent-blue-600"/>
-                              <span className="text-sm text-slate-700">Revisei se o artigo contém PICO, Método e Referências? <strong className="text-xs text-red-500">*Obrigatório</strong></span>
+                              <span className="text-sm text-slate-700">Revisei se o artigo contém PECO, método e referências? <strong className="text-xs text-red-500">*Obrigatório</strong></span>
                           </label>
                       </div>
                       <div className="flex gap-3">
@@ -1233,7 +1316,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                               <div className="flex justify-between items-start">
                                   <div>
                                       <h3 className="text-xl font-serif font-bold text-green-900 mb-1">Revista Brasileira de Epidemiologia</h3>
-                                      <div className="text-xs text-slate-500 mb-4">Indexed in SciELO, PubMed • Qualis A2</div>
+                                      <div className="text-xs text-slate-500 mb-4">Periódico de epidemiologia • revisão por pares • escopo compatível</div>
                                       <div className="flex gap-4 text-sm text-slate-700 mb-4">
                                           <span className="flex items-center gap-1"><GraduationCap size={14} className="text-slate-500"/> Double-Blind Peer Review</span>
                                           <span className="flex items-center gap-1"><DollarSign size={14} className="text-slate-500"/> Taxa: Gratuita / Baixa</span>
@@ -1248,7 +1331,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                               <div className="flex justify-between items-start">
                                   <div>
                                       <h3 className="text-xl font-serif font-bold text-slate-900 mb-1">The Lancet Global Health</h3>
-                                      <div className="text-xs text-slate-500 mb-4">Impact Factor: 25.8 • Qualis A1</div>
+                                      <div className="text-xs text-slate-500 mb-4">Escopo internacional em saúde global • seletividade muito alta</div>
                                       <div className="flex gap-4 text-sm text-slate-700 mb-4">
                                           <span className="flex items-center gap-1"><GraduationCap size={14} className="text-slate-500"/> Rigorous Review</span>
                                           <span className="flex items-center gap-1"><AlertCircle size={14} className="text-orange-500"/> Rejeição: 95%</span>
@@ -1298,13 +1381,14 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
               )}
 
               {journalView === 'success' && (
-                  <div className="h-full flex flex-col items-center justify-center animate-in zoom-in">
+                  <div className="h-full flex flex-col items-center justify-center animate-in zoom-in p-6">
                       <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
                           <ThumbsUp size={40} className="text-green-600"/>
                       </div>
                       <h2 className="text-3xl font-bold text-slate-800 mb-2">Aceito para Publicação!</h2>
-                      <p className="text-slate-600 max-w-md text-center mb-8">Seu artigo passou pela revisão por pares e foi aceito por sua qualidade metodológica.</p>
-                      <div className="text-xs text-slate-400">Redirecionando para certificação...</div>
+                      <p className="text-slate-600 max-w-md text-center mb-4">Seu artigo passou pela revisão por pares desta simulação e foi aceito. Publicar é uma etapa de disseminação; o próximo passo é escolher um congresso compatível com o estudo.</p>
+                      <div className="mb-6 max-w-md rounded-lg border border-orange-200 bg-orange-50 p-3 text-center text-xs text-orange-900">Abra o CongressoHub, compare o escopo dos eventos e submeta o trabalho ao mais adequado.</div>
+                      <button onClick={() => navigate('congress')} className="rounded-lg bg-orange-600 px-7 py-3 text-sm font-bold text-white shadow hover:bg-orange-700">Escolher congresso agora</button>
                   </div>
               )}
           </div>
@@ -1337,7 +1421,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                               <div className="w-24 h-24 rounded-full bg-slate-800 border-2 border-red-600 flex items-center justify-center mb-4">
                                   <Youtube size={48} className="text-red-600 animate-bounce" />
                               </div>
-                              <h4 className="text-center font-bold text-slate-200">Mandic Talks #04 - Metodologia Científica e Epidemiologia</h4>
+                              <h4 className="text-center font-bold text-slate-200">Mandic Talks — Metodologia Científica e Epidemiologia</h4>
                               <p className="text-xs text-slate-400 mt-2 text-center max-w-sm">Tocando áudio do episódio... "O segredo do estudo ecológico é entender que a unidade de observação é uma população, não um indivíduo..."</p>
                               <button onClick={() => setVideoPlaying(false)} className="mt-4 text-xs bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-full transition-all">Pausar</button>
                           </div>
@@ -1360,7 +1444,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                   
                   {/* Video Title and Author */}
                   <div className="mt-4">
-                      <h1 className="text-xl font-bold text-slate-100 font-sans">Mandic Talks Podcast - Ep 04: Estudos Ecológicos e Causalidade na Prática Médica</h1>
+                      <h1 className="text-xl font-bold text-slate-100 font-sans">Mandic Talks Podcast — Estudos Ecológicos e Causalidade na Prática Médica</h1>
                       <div className="flex flex-wrap items-center justify-between mt-3 border-b border-[#3d3d3d] pb-4 gap-4">
                           <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold text-sm">MT</div>
@@ -1397,7 +1481,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
   );
 
   const renderPigames = () => {
-      const questions = [
+      const questions: Array<{ id: string; category: string; question: string; options: string[]; correctIdx: number; explanation: string; mode?: 'sequence'; mechanic?: string }> = [
           {
               id: "q1",
               category: "Estudos Ecológicos",
@@ -1422,14 +1506,14 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                   "Estudo de Coorte retrospectivo sem grupo controle."
               ],
               correctIdx: 2,
-              explanation: "Excelente! O Ensaio Clínico Randomizado Controlado (ECR) é o melhor desenho primário para testar causalidade e intervenções porque a randomização evita vieses de seleção."
+              explanation: "Excelente! Para intervenções, o ensaio clínico randomizado bem conduzido oferece forte evidência causal. A randomização tende a equilibrar confundidores entre os grupos; ela não elimina automaticamente perdas, desvios do protocolo ou outros vieses."
           },
           {
               id: "q3",
               category: "Bioestatística & Causalidade",
               question: "Um pesquisador encontra um p-valor de 0.002 ao analisar a associação de um medicamento. O que o p-valor realmente significa sob a ótica da Hipótese Nula (H0)?",
               options: [
-                  "A chance de que o resultado observado seja fruto do acaso se a Hipótese Nula fosse verdadeira é de apenas 0.2%.",
+                  "Se a hipótese nula e o modelo forem válidos, a probabilidade de observar um resultado tão ou mais extremo que o encontrado é 0,2%.",
                   "O medicamento possui exatamente 99.8% de eficácia biológica curativa.",
                   "O estudo possui um viés de subnotificação de exatamente 0.02%.",
                   "A hipótese alternativa está 100% errada."
@@ -1461,7 +1545,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                   "Um efeito placebo puro decorrente da cafeína."
               ],
               correctIdx: 1,
-              explanation: "Perfeito! O tabagismo é um fator de confusão típico aqui, pois fumantes tendem a beber mais café e o fumo é fator de risco direto para infarto. Ajustar ou estratificar revela a verdadeira ausência de causalidade isolada do café."
+              explanation: "Perfeito! Nesse exemplo, o tabagismo satisfaz a lógica de confundimento e explica a associação bruta. Estratificar ou ajustar ajuda a estimar a associação do café condicionada ao tabagismo, mas a validade causal ainda depende do desenho, da medição e de outros confundidores."
           },
           {
               id: "q6",
@@ -1474,7 +1558,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                   "Nenhum dos pesquisadores saiba o p-valor estatístico antes do fim do ano fiscal."
               ],
               correctIdx: 0,
-              explanation: "Exato! O mascaramento duplo-cego previne viés de aferição pelo examinador e efeitos placebo ou de conformidade pelo voluntário, aumentando drasticamente a validade interna."
+              explanation: "Exato! Nesse uso clássico, participantes e avaliadores desconhecem a alocação. O mascaramento pode reduzir diferenças de comportamento e aferição, mas quem está mascarado deve ser descrito explicitamente, pois o termo 'duplo-cego' pode ser ambíguo."
           },
           {
               id: "q7",
@@ -1492,15 +1576,17 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
           {
               id: "q8",
               category: "Design Thinking: Araras",
-              question: "Ao tentar resolver a alta taxa de mortalidade infantil em um bairro periférico de Araras usando Design Thinking, qual deve ser a PRIMEIRA etapa fundamental da sua equipe de gestão em saúde?",
+              mechanic: "ORDENAÇÃO",
+              mode: "sequence",
+              question: "Organize o ciclo de Design Thinking para enfrentar a mortalidade infantil em um bairro de Araras. Clique nas etapas na ordem mais coerente:",
               options: [
-                  "Protótipo rápido: imprimir e distribuir panfletos genéricos sobre saúde sem conversar com os moradores locais.",
-                  "Ideação brainstorming: trancar a equipe numa sala e inventar ideias disruptivas sem base no mundo real.",
-                  "Testagem técnica: implementar um novo posto de saúde caro de imediato sem validação.",
-                  "Empatia e Imersão: ir a campo, escutar ativamente as mães, entender profundamente suas dores, o contexto social e cultural."
+                  "Empatia/imersão — escutar famílias e profissionais no território",
+                  "Definição — sintetizar necessidades e formular o problema",
+                  "Ideação — gerar alternativas com a comunidade e a equipe",
+                  "Prototipagem e teste — experimentar em pequena escala, colher feedback e iterar"
               ],
-              correctIdx: 3,
-              explanation: "Excelente! O Design Thinking é centrado no ser humano. A fase inicial (Empatia/Imersão) é crucial para entender o problema real vivenciado pela comunidade."
+              correctIdx: 0,
+              explanation: "Excelente! A sequência mantém o processo centrado nas pessoas: compreender o contexto, definir o problema, criar alternativas e testar soluções de forma iterativa."
           }
       ];
 
@@ -1556,8 +1642,37 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                   setPigamesFeedback(`Parabéns! Resposta Correta! ${currentQuestion.explanation}`);
               } else {
                   setPigamesLives(prev => Math.max(0, prev - 1));
-                  setPigamesFeedback(`Ops, resposta incorreta! A resposta certa era a opção: "${currentQuestion.options[currentQuestion.correctIdx]}". Tente ler os tutoriais no email para fixar o conceito!`);
+                  setPigamesFeedback(`Ops, resposta incorreta! A resposta certa era: "${currentQuestion.options[currentQuestion.correctIdx]}". Leia os tutoriais no Pigmail e tente novamente para fixar o conceito.`);
               }
+          }
+      };
+
+      const handleSequenceChoice = (idx: number) => {
+          if (!currentQuestion || currentQuestion.mode !== 'sequence' || pigamesAnswered || pigamesLives <= 0 || pigamesSequence.includes(idx)) return;
+          const expectedIdx = pigamesSequence.length;
+          if (idx !== expectedIdx) {
+              playBeep(false);
+              setPigamesLives(previous => Math.max(0, previous - 1));
+              setPigamesSequence([]);
+              setPigamesSelectedOption(-1);
+              setPigamesFeedback('A ordem se perdeu. Comece compreendendo as pessoas e o contexto antes de definir o problema, propor ou testar soluções. A sequência foi reiniciada.');
+              return;
+          }
+
+          const nextSequence = [...pigamesSequence, idx];
+          setPigamesSequence(nextSequence);
+          setPigamesFeedback(null);
+          if (nextSequence.length === currentQuestion.options.length) {
+              const alreadyDone = pigamesCompletedCount.includes(currentQuestion.id);
+              playBeep(true);
+              setPigamesAnswered(true);
+              setPigamesSelectedOption(currentQuestion.correctIdx);
+              if (!alreadyDone) {
+                  setPigamesCompletedCount(previous => [...previous, currentQuestion.id]);
+                  setPigamesScore(previous => previous + 20);
+                  onQuizComplete(20);
+              }
+              setPigamesFeedback(`Sequência concluída! ${currentQuestion.explanation}`);
           }
       };
 
@@ -1569,6 +1684,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
           setPigamesAnswered(false);
           setPigamesSelectedOption(null);
           setPigamesFeedback(null);
+          setPigamesSequence([]);
       };
 
       // Rank mapping
@@ -1636,12 +1752,12 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                       <div className="w-full bg-indigo-950/80 rounded-2xl p-4 border border-indigo-800/40 mb-6 text-left">
                           <div className="flex justify-between items-center text-xs font-semibold mb-2 font-mono">
                               <span className="text-slate-400">Progresso de Certificação:</span>
-                              <span className="text-yellow-400 font-bold">{pigamesScore} / 120 XP</span>
+                              <span className="text-yellow-400 font-bold">{pigamesScore} / {questions.length * 20} XP</span>
                           </div>
                           <div className="w-full bg-indigo-950 border border-indigo-900 h-2.5 rounded-full overflow-hidden">
                               <div 
                                   className="bg-gradient-to-r from-indigo-500 to-yellow-500 h-full transition-all duration-500"
-                                  style={{ width: `${(pigamesScore / 120) * 100}%` }}
+                                  style={{ width: `${(pigamesScore / (questions.length * 20)) * 100}%` }}
                               ></div>
                           </div>
                       </div>
@@ -1655,8 +1771,9 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                                       onClick={() => {
                                           setPigamesCategory(q.category);
                                           setPigamesAnswered(false);
-                                          setPigamesSelectedOption(null);
-                                          setPigamesFeedback(null);
+                                           setPigamesSelectedOption(null);
+                                           setPigamesFeedback(null);
+                                           setPigamesSequence([]);
                                       }}
                                       className={`p-4 rounded-2xl text-left border transition-all flex flex-col justify-between group h-36 relative ${
                                           isCompleted 
@@ -1669,7 +1786,8 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                                               <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold font-mono">Fase 0{idx+1}</span>
                                               {isCompleted && <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold font-mono">CONCLUÍDO</span>}
                                           </div>
-                                          <h3 className="font-bold text-xs text-slate-100 group-hover:text-white leading-tight">{q.category}</h3>
+                                           <h3 className="font-bold text-xs text-slate-100 group-hover:text-white leading-tight">{q.category}</h3>
+                                           <span className="mt-2 inline-block rounded bg-indigo-900/60 px-1.5 py-0.5 text-[8px] font-bold tracking-wider text-indigo-300">{q.mechanic || (idx === 0 ? 'VERDADEIRO OU FALSO' : idx === 2 ? 'CASO CLÍNICO' : 'MÚLTIPLA ESCOLHA')}</span>
                                       </div>
                                       <span className="text-[11px] text-indigo-400 group-hover:text-yellow-300 font-mono font-bold flex items-center gap-1">
                                           {isCompleted ? <span className="flex items-center gap-1">Ver Desafio <ArrowRight size={12}/></span> : <span className="flex items-center gap-1">Jogar <ArrowRight size={12}/></span>}
@@ -1694,12 +1812,23 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                           <h3 className="text-base font-bold text-white mb-6 leading-relaxed mr-24">
                               {currentQuestion?.question}
                           </h3>
-                          
+
+                          {currentQuestion?.mode === 'sequence' && (
+                              <div className="mb-4 rounded-xl border border-indigo-800 bg-indigo-950/50 p-3 text-xs text-indigo-200">
+                                  <strong className="text-yellow-300">Ordem montada:</strong> {pigamesSequence.length === 0 ? 'nenhuma etapa ainda' : pigamesSequence.map(index => currentQuestion.options[index].split(' — ')[0]).join(' → ')}
+                              </div>
+                          )}
+
                           <div className="space-y-3">
                               {currentQuestion?.options.map((opt, oIdx) => {
                                   let btnStyle = "bg-[#18163a] hover:bg-[#1d1b4a] border border-indigo-950 text-slate-300";
+                                  if (currentQuestion.mode === 'sequence' && pigamesSequence.includes(oIdx) && !pigamesAnswered) {
+                                      btnStyle = "bg-indigo-700 border border-yellow-400 text-white opacity-60";
+                                  }
                                   if (pigamesAnswered) {
-                                      if (oIdx === currentQuestion.correctIdx) {
+                                      if (currentQuestion.mode === 'sequence') {
+                                          btnStyle = "bg-emerald-950/80 border border-emerald-600 text-emerald-200";
+                                      } else if (oIdx === currentQuestion.correctIdx) {
                                           btnStyle = "bg-emerald-950/80 border-2 border-emerald-500 text-emerald-200 font-bold shadow-[0_0_15px_rgba(16,185,129,0.2)]";
                                       } else if (pigamesSelectedOption === oIdx) {
                                           btnStyle = "bg-red-950/80 border-2 border-red-500 text-red-200 opacity-85";
@@ -1710,11 +1839,11 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                                   return (
                                       <button
                                           key={oIdx}
-                                          disabled={pigamesAnswered}
-                                          onClick={() => handleAnswer(oIdx)}
+                                          disabled={pigamesAnswered || (currentQuestion.mode === 'sequence' && pigamesSequence.includes(oIdx))}
+                                          onClick={() => currentQuestion.mode === 'sequence' ? handleSequenceChoice(oIdx) : handleAnswer(oIdx)}
                                           className={`w-full text-left p-3.5 rounded-xl text-xs transition-all flex items-start gap-3 cursor-pointer ${btnStyle}`}
                                       >
-                                          <span className="font-mono font-bold text-yellow-400 mt-0.5">{String.fromCharCode(65 + oIdx)}.</span>
+                                          <span className="font-mono font-bold text-yellow-400 mt-0.5">{currentQuestion.mode === 'sequence' ? (pigamesSequence.indexOf(oIdx) >= 0 ? `${pigamesSequence.indexOf(oIdx) + 1}º` : '○') : `${String.fromCharCode(65 + oIdx)}.`}</span>
                                           <span className="flex-1 leading-normal">{opt}</span>
                                       </button>
                                   );
@@ -1745,144 +1874,138 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
   };
 
   const renderLattes = () => {
+      const hasArticle = fileSystem.some(file => file.type === 'doc');
+      const hasBanner = bannerCompleted || fileSystem.some(file => file.type === 'poster');
+      const hasCongress = congressRegistered || currentStep >= EcologicalStep.LATTES_REGISTRATION;
+      const records = [
+          { id: 'project', title: 'Projeto de pesquisa', category: 'Projetos de pesquisa', detail: currentScenario?.title || 'Defina o problema e o delineamento do estudo', available: Boolean(currentScenario), icon: FolderKanban },
+          { id: 'article', title: 'Artigo científico', category: 'Produção bibliográfica', detail: 'Manuscrito final do estudo ecológico', available: hasArticle, icon: FileText },
+          { id: 'banner', title: 'Apresentação em banner', category: 'Apresentação de trabalho', detail: 'Material preparado para comunicação dos resultados', available: hasBanner, icon: Presentation },
+          { id: 'congress', title: 'Participação em congresso', category: 'Eventos', detail: 'Congresso Brasileiro de Saúde Pública & Epidemiologia', available: hasCongress, icon: CalendarDays }
+      ];
+      const allRegistered = records.every(record => lattesItems.includes(record.id));
+      const registerItem = (id: string, available: boolean) => {
+          if (!available || lattesItems.includes(id)) return;
+          setLattesItems(previous => [...previous, id]);
+          onQuizComplete(15);
+      };
+
       return (
           <div className="bg-[#f8fafc] h-full text-slate-800 flex flex-col overflow-y-auto font-sans">
-              {/* CNPq Lattes Header */}
-              <div className="bg-[#1e3a8a] text-white p-4 flex justify-between items-center shrink-0 shadow-md">
+              <div className="bg-[#1e3a8a] text-white p-3 md:p-4 flex justify-between items-center shrink-0 shadow-md">
                   <div className="flex items-center gap-3">
-                      <GraduationCap size={32} className="text-yellow-400" />
+                      <GraduationCap size={30} className="text-yellow-400 shrink-0" />
                       <div>
-                          <h2 className="text-lg font-black font-serif tracking-wide leading-none">Plataforma Lattes</h2>
-                          <p className="text-[10px] text-slate-200 tracking-wider">CONSELHO NACIONAL DE DESENVOLVIMENTO CIENTÍFICO E TECNOLÓGICO - CNPq</p>
+                          <h2 className="text-base md:text-lg font-black font-serif tracking-wide leading-none">Plataforma Lattes</h2>
+                          <p className="hidden sm:block text-[10px] text-slate-200 tracking-wider">SIMULAÇÃO EDUCACIONAL DE ATUALIZAÇÃO CURRICULAR</p>
                       </div>
                   </div>
-                  <span className="text-xs font-bold text-yellow-300 bg-blue-950 border border-blue-700 px-3 py-1 rounded">
-                      Cadastro de Pesquisadores
-                  </span>
+                  <span className="hidden md:block text-xs font-bold text-yellow-300 bg-blue-950 border border-blue-700 px-3 py-1 rounded">Cadastro de Pesquisadores</span>
               </div>
 
-              {currentStep < EcologicalStep.LATTES_REGISTRATION ? (
-                  <div className="flex-1 p-8 flex flex-col items-center justify-center text-center max-w-md mx-auto">
-                      <Lock size={48} className="text-indigo-900 mb-4 animate-pulse" />
-                      <h3 className="font-bold text-slate-800 mb-2">Currículo Bloqueado</h3>
-                      <p className="text-sm text-slate-500 leading-relaxed">
-                          Prezado pesquisador, o cadastro de produções acadêmicas no CNPq é realizado após a publicação em revistas indexadas e apresentação em congressos relevantes.
-                      </p>
-                      <div className="mt-6 bg-slate-100 p-3 rounded border border-slate-200 text-xs text-slate-600">
-                          <strong>Requisito:</strong> Complete o ciclo da escrita, envie o artigo no Portal de Periódicos, participe de um Congresso de Saúde Pública, e libere seu registro!
+              <div className="flex-1 p-4 md:p-6 max-w-4xl mx-auto w-full space-y-5">
+                  <div className="bg-white rounded-xl shadow p-4 md:p-6 border border-slate-200 flex flex-col sm:flex-row gap-4 sm:gap-6">
+                      <div className="w-16 h-16 md:w-20 md:h-20 rounded-lg bg-blue-50 text-blue-800 flex items-center justify-center font-bold text-3xl shrink-0 border border-blue-100 shadow-inner">
+                          {inputUser ? inputUser.charAt(0) : 'E'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                          <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold block mb-1">Pesquisador em formação</span>
+                          <h2 className="text-xl md:text-2xl font-bold text-slate-800 truncate">{inputUser || 'Estudante de Medicina'}</h2>
+                          <p className="text-xs text-slate-500 mt-1">Faculdade de Medicina São Leopoldo Mandic</p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                              <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-full font-mono font-bold">Lattes simulado: ativo</span>
+                              <span className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full font-bold">{lattesItems.length}/4 registros</span>
+                          </div>
                       </div>
                   </div>
-              ) : (
-                  <div className="flex-1 p-6 max-w-3xl mx-auto w-full space-y-6">
-                      {/* Lattes User Card */}
-                      <div className="bg-white rounded-xl shadow p-6 border border-slate-200 flex gap-6">
-                          <div className="w-20 h-20 rounded-lg bg-blue-50 text-blue-800 flex items-center justify-center font-bold text-3xl shrink-0 border border-blue-100 shadow-inner">
-                              {inputUser ? inputUser.charAt(0) : "E"}
-                          </div>
-                          <div className="flex-1">
-                              <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold block mb-1">Pesquisador Cadastrado</span>
-                              <h2 className="text-2xl font-bold text-slate-800">{inputUser || "Estudante de Medicina"}</h2>
-                              <p className="text-xs text-slate-500 mt-1">Faculdade de Medicina São Leopoldo Mandic</p>
-                              <div className="mt-3 flex gap-2">
-                                  <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-full font-mono font-bold">Currículo Lattes ID: 9283748293741</span>
-                                  <span className="text-[10px] bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 rounded-full font-mono font-bold">Status: Ativo</span>
-                              </div>
-                          </div>
-                      </div>
 
-                      {/* Article Registration Area */}
-                      <div className="bg-white rounded-xl shadow p-6 border border-slate-200">
-                          <h3 className="font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
-                              <FileText className="text-blue-900" size={18}/> Cadastro de Produção Bibliográfica
-                          </h3>
+                  <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-xs leading-relaxed text-blue-900">
+                      <strong className="block text-sm mb-1">Seu currículo pode ser atualizado durante toda a jornada.</strong>
+                      Cada produção libera quando sua etapa correspondente fica pronta. Neste simulador, o ciclo só pode ser encerrado depois dos quatro cadastros. Na vida real, use sempre a categoria e a situação corretas — projeto em andamento não é publicação.
+                  </div>
 
-                          {lattesRegistered ? (
-                              <div className="bg-green-50 border border-green-300 text-green-800 rounded-xl p-5 animate-in zoom-in">
-                                  <div className="flex items-center gap-2 mb-2">
-                                      <CheckCircle className="text-green-600" />
-                                      <h4 className="font-bold">Artigo Registrado no CNPq!</h4>
-                                  </div>
-                                  <p className="text-xs leading-relaxed text-green-700">
-                                      O artigo foi incluído em seu Currículo Lattes com sucesso sob a modalidade "Artigos completos publicados em periódicos". Sua pontuação acadêmica foi atualizada.
-                                  </p>
-                                  <div className="mt-4 font-mono text-[10px] text-green-600 uppercase tracking-widest font-bold">
-                                      INTEGRAÇÃO CNPQ COMPLETA • +50 XP ADICIONAIS!
-                                  </div>
-                              </div>
-                          ) : (
-                              <div className="space-y-4">
-                                  <p className="text-xs text-slate-500 leading-relaxed">
-                                      Seu manuscrito foi aceito pela revista acadêmica. Clique abaixo para registrar esta produção oficial e aumentar seu índice de citações no ecossistema CNPq.
-                                  </p>
-                                  
-                                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-xs">
-                                      <strong className="block text-slate-700 mb-1">DADOS DA PUBLICAÇÃO ENCONTRADA:</strong>
-                                      <div className="text-slate-600 space-y-1">
-                                          <div><strong>Título:</strong> Artigo Científico de {inputUser || "Estudante"} (Simulação de Estudos Epidemiológicos)</div>
-                                          <div><strong>Periódico:</strong> Revista Brasileira de Epidemiologia (Qualis A2)</div>
-                                          <div><strong>Data de Aceite:</strong> {new Date().toLocaleDateString()}</div>
-                                          <div><strong>Situação:</strong> Aceito / Publicado</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {records.map(record => {
+                          const registered = lattesItems.includes(record.id);
+                          const Icon = record.icon;
+                          return (
+                              <div key={record.id} className={`rounded-xl border p-5 transition-all ${registered ? 'border-green-300 bg-green-50' : record.available ? 'border-slate-200 bg-white shadow-sm' : 'border-slate-200 bg-slate-100 opacity-75'}`}>
+                                  <div className="flex items-start gap-3">
+                                      <div className={`rounded-lg p-2 ${registered ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-800'}`}><Icon size={21}/></div>
+                                      <div className="flex-1 min-w-0">
+                                          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">{record.category}</div>
+                                          <h3 className="font-bold text-slate-800">{record.title}</h3>
+                                          <p className="mt-1 text-xs text-slate-500 leading-relaxed">{record.detail}</p>
                                       </div>
+                                      {registered && <CheckCircle size={22} className="text-green-600 shrink-0"/>}
                                   </div>
-
-                                  <button onClick={() => {
-                                      setLattesRegistered(true);
-                                      onQuizComplete(50);
-                                      alert("Parabéns! Artigo cientificamente certificado e registrado no CNPq com sucesso! Você ganhou +50 XP!");
-                                      if (onLattesSuccess) onLattesSuccess();
-                                  }} className="w-full bg-blue-900 hover:bg-blue-800 text-white font-bold text-sm py-3 rounded-xl transition-all shadow flex items-center justify-center gap-2 cursor-pointer">
-                                      <GraduationCap size={18}/> Registrar Artigo no Lattes & Receber +50 XP
+                                  <button
+                                      onClick={() => registerItem(record.id, record.available)}
+                                      disabled={!record.available || registered}
+                                      className={`mt-4 w-full rounded-lg py-2.5 text-xs font-bold transition-all ${registered ? 'bg-green-100 text-green-700' : record.available ? 'bg-blue-900 text-white hover:bg-blue-800 shadow' : 'bg-slate-200 text-slate-500 cursor-not-allowed'}`}
+                                  >
+                                      {registered ? 'Cadastrado com sucesso' : record.available ? 'Cadastrar no currículo · +15 XP' : 'Etapa ainda não concluída'}
                                   </button>
                               </div>
-                          )}
-                      </div>
+                          );
+                      })}
                   </div>
-              )}
+
+                  {allRegistered && currentStep >= EcologicalStep.LATTES_REGISTRATION && (
+                      <div className="rounded-2xl border border-green-300 bg-gradient-to-r from-green-50 to-emerald-50 p-5 text-center animate-in zoom-in">
+                          <CheckCircle size={38} className="mx-auto mb-2 text-green-600"/>
+                          <h3 className="font-bold text-green-900">Ciclo acadêmico registrado!</h3>
+                          <p className="mx-auto mt-1 mb-4 max-w-xl text-xs text-green-800">Projeto, artigo, banner e congresso constam no currículo simulado. Você poderá finalizar para ver o certificado ou continuar explorando o Pigmail, Pigames e os demais aplicativos.</p>
+                          <button onClick={() => onLattesSuccess?.()} className="rounded-xl bg-green-700 px-7 py-3 text-sm font-bold text-white shadow hover:bg-green-800">Revisar opções de encerramento</button>
+                      </div>
+                  )}
+              </div>
           </div>
       );
   };
 
   const renderHome = () => (
-      <div className="bg-slate-100 h-full flex flex-col items-center justify-center p-6 overflow-y-auto">
-          <div className="text-4xl font-bold text-slate-800 mb-8 flex items-center gap-3 select-none">
-              <Globe size={48} className="text-blue-600" /> Piggle Chrome
+      <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 h-full flex flex-col items-center justify-center p-4 md:p-8 overflow-y-auto">
+          <div className="text-2xl md:text-4xl font-black text-slate-800 mb-2 flex items-center gap-3 select-none">
+              <div className="rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-700 p-2 text-white shadow-lg"><Globe size={34} /></div> Piggle Chrome
           </div>
-          <div className="grid grid-cols-3 gap-6 max-w-2xl w-full">
-             <div onClick={() => navigate('datasus')} className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 border border-slate-200">
-                  <div className="w-14 h-14 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xl">D</div>
-                  <span className="text-xs font-bold text-slate-600">DATASUS</span>
+          <p className="mb-7 text-center text-xs md:text-sm text-slate-500">Seu ambiente de pesquisa, comunicação e aprendizagem</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 max-w-3xl w-full">
+             <div onClick={() => navigate('datasus')} className="group bg-white/90 rounded-2xl p-4 md:p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 border border-blue-100">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-700 text-white shadow-md flex items-center justify-center group-hover:scale-105 transition-transform"><Database size={28}/></div>
+                  <span className="text-xs font-bold text-slate-700">DATASUS</span>
+                  <span className="hidden md:block text-[10px] text-slate-400 text-center">Dados públicos de saúde</span>
              </div>
-             <div onClick={() => navigate('pubmed')} className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 border border-slate-200">
-                  <div className="w-14 h-14 rounded-full bg-slate-800 text-white flex items-center justify-center font-serif font-bold text-xl">P</div>
-                  <span className="text-xs font-bold text-slate-600">PubMed</span>
+             <div onClick={() => navigate('pubmed')} className="group bg-white/90 rounded-2xl p-4 md:p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 border border-emerald-100">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-800 text-white shadow-md flex items-center justify-center group-hover:scale-105 transition-transform"><Microscope size={28}/></div>
+                  <span className="text-xs font-bold text-slate-700">PubMed</span>
+                  <span className="hidden md:block text-[10px] text-slate-400 text-center">Busca bibliográfica</span>
              </div>
-             <div onClick={() => navigate('mail')} className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 border border-slate-200 relative">
-                  {allEmails.some(e => !e.read) && <div className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full"></div>}
-                  <div className="w-14 h-14 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-xl"><Mail size={24}/></div>
-                  <span className="text-xs font-bold text-slate-600">Webmail</span>
+             <div onClick={() => navigate('mail')} className="group bg-white/90 rounded-2xl p-4 md:p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 border border-rose-100 relative">
+                  {allEmails.some(e => !e.read) && <div className="absolute top-3 right-3 min-w-5 h-5 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white">{allEmails.filter(e => !e.read).length}</div>}
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-400 to-red-700 text-white shadow-md flex items-center justify-center group-hover:scale-105 transition-transform"><MailCheck size={28}/></div>
+                  <span className="text-xs font-bold text-slate-700">Pigmail</span>
+                  <span className="hidden md:block text-[10px] text-slate-400 text-center">Orientação e quizzes</span>
              </div>
-             
-             {/* YouTube and Podcast Card */}
-             <div onClick={() => navigate('youtube')} className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 border border-slate-200">
-                  <div className="w-14 h-14 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-xl"><Youtube size={24}/></div>
-                  <span className="text-xs font-bold text-slate-600 text-center">Mandic Talks</span>
+             <div onClick={() => navigate('youtube')} className="group bg-white/90 rounded-2xl p-4 md:p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 border border-fuchsia-100">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-fuchsia-400 to-purple-800 text-white shadow-md flex items-center justify-center group-hover:scale-105 transition-transform"><Radio size={28}/></div>
+                  <span className="text-xs font-bold text-slate-700 text-center">Mandic Talks</span>
+                  <span className="hidden md:block text-[10px] text-slate-400 text-center">Podcast científico</span>
              </div>
-
-             {/* Pigames Tab */}
-             <div onClick={() => navigate('pigames')} className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 border border-slate-200">
-                  <div className="w-14 h-14 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-xl"><Gamepad2 size={24}/></div>
-                  <span className="text-xs font-bold text-slate-600 text-center">Pigames Arcade</span>
+             <div onClick={() => navigate('pigames')} className="group bg-white/90 rounded-2xl p-4 md:p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 border border-amber-100">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-700 text-white shadow-md flex items-center justify-center group-hover:scale-105 transition-transform"><Trophy size={28}/></div>
+                  <span className="text-xs font-bold text-slate-700 text-center">Pigames Arena</span>
+                  <span className="hidden md:block text-[10px] text-slate-400 text-center">Desafios de conhecimento</span>
              </div>
-
-             {/* Currículo Lattes */}
-             <div onClick={() => navigate('lattes')} className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 border border-slate-200">
-                  <div className="w-14 h-14 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xl"><GraduationCap size={24}/></div>
-                  <span className="text-xs font-bold text-slate-600 text-center">Currículo Lattes</span>
+             <div onClick={() => navigate('lattes')} className="group bg-white/90 rounded-2xl p-4 md:p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 border border-indigo-100">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-400 to-blue-900 text-white shadow-md flex items-center justify-center group-hover:scale-105 transition-transform"><UserRound size={28}/></div>
+                  <span className="text-xs font-bold text-slate-700 text-center">Currículo Lattes</span>
+                  <span className="hidden md:block text-[10px] text-slate-400 text-center">Acompanhe suas produções</span>
              </div>
 
              {/* Journal Portal - Only visible later */}
              {currentStep >= EcologicalStep.JOURNAL_SUBMISSION && (
-                 <div onClick={() => navigate('journal')} className="col-span-3 bg-purple-50 hover:bg-purple-100 rounded-2xl p-4 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex items-center justify-center gap-3 border border-purple-200 animate-in zoom-in">
+                 <div onClick={() => navigate('journal')} className="col-span-2 md:col-span-3 bg-purple-50 hover:bg-purple-100 rounded-2xl p-4 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex items-center justify-center gap-3 border border-purple-200 animate-in zoom-in">
                       <div className="w-12 h-12 rounded-full bg-purple-200 text-purple-700 flex items-center justify-center font-bold text-xl"><Book size={20}/></div>
                       <div className="text-left animate-pulse">
                           <span className="text-xs font-bold text-purple-800 block">Portal de Periódicos</span>
@@ -1893,8 +2016,8 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
 
              {/* Congress Portal - Only visible later */}
              {currentStep >= EcologicalStep.CONGRESS_SUBMISSION && (
-                 <div onClick={() => navigate('congress')} className="col-span-3 bg-orange-50 hover:bg-orange-100 rounded-2xl p-4 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex items-center justify-center gap-3 border border-orange-200 animate-in zoom-in">
-                      <div className="w-12 h-12 rounded-full bg-orange-200 text-orange-700 flex items-center justify-center font-bold text-xl"><Globe size={20}/></div>
+                 <div onClick={() => navigate('congress')} className="col-span-2 md:col-span-3 bg-orange-50 hover:bg-orange-100 rounded-2xl p-4 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer flex items-center justify-center gap-3 border border-orange-200 animate-in zoom-in">
+                      <div className="w-12 h-12 rounded-full bg-orange-200 text-orange-700 flex items-center justify-center font-bold text-xl"><Presentation size={20}/></div>
                       <div className="text-left animate-pulse">
                           <span className="text-xs font-bold text-orange-800 block">CongressoHub</span>
                           <span className="text-[10px] text-orange-600">Inscreva seu artigo em eventos acadêmicos</span>
