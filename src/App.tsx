@@ -8,6 +8,7 @@ import { PaperWriter } from './components/apps/PaperWriter';
 import { Tutor } from './components/apps/Tutor';
 import { Explorer } from './components/apps/Explorer';
 import { BannerDesigner } from './components/apps/BannerDesigner';
+import { HealthManagement } from './components/apps/HealthManagement';
 import { AppID, WindowState, VirtualFile, Scenario, EcologicalStep, ClipboardItem, Email, ArticleHit, GameStats } from './types';
 import { setApiKey, validatePICO } from './services/geminiService';
 
@@ -82,6 +83,16 @@ const DEFAULT_WINDOWS: Record<AppID, WindowState> = {
       zIndex: 6,
       position: { x: 50, y: 50},
       size: { width: 1100, height: 750}
+  },
+  [AppID.HEALTH_MANAGEMENT]: {
+      id: AppID.HEALTH_MANAGEMENT,
+      title: 'Sala de Situação SUS',
+      isOpen: false,
+      isMinimized: false,
+      isMaximized: false,
+      zIndex: 7,
+      position: { x: 40, y: 25 },
+      size: { width: 1120, height: 760 }
   }
 };
 
@@ -145,7 +156,7 @@ const REVIEW_SOURCE_GROUPS = [
             { label: 'STROBE — EQUATOR Network', description: 'Checklist para relatar estudos observacionais com transparência e completude.', url: 'https://www.equator-network.org/reporting-guidelines/strobe/' },
             { label: 'EQUATOR — biblioteca de diretrizes', description: 'Diretrizes de relato para diferentes desenhos, como CONSORT, PRISMA e STARD.', url: 'https://www.equator-network.org/reporting-guidelines/' },
             { label: 'JBI — ferramentas de avaliação crítica', description: 'Instrumentos para examinar risco de viés em diferentes tipos de estudo.', url: 'https://jbi.global/critical-appraisal-tools' },
-            { label: 'Cochrane Handbook', description: 'Referência sobre revisão sistemática, medidas de efeito, viés e síntese.', url: 'https://training.cochrane.org/handbook/current' },
+            { label: 'Cochrane Handbook', description: 'Referência sobre revisão sistemática, medidas de efeito, viés e síntese.', url: 'https://www.cochrane.org/authors/handbooks-and-manuals/handbook/current' },
             { label: 'CDC — intervalo de confiança', description: 'Explicação aplicada sobre estimativas, erro-padrão e precisão.', url: 'https://archive.cdc.gov/www_cdc_gov/csels/dsepd/ss1978/lesson2/section7.html' },
         ],
     },
@@ -154,8 +165,18 @@ const REVIEW_SOURCE_GROUPS = [
         links: [
             { label: 'CNS — Resolução nº 674/2022', description: 'Tipificação e tramitação de protocolos de pesquisa no Sistema CEP/Conep.', url: 'https://www.gov.br/conselho-nacional-de-saude/pt-br/acesso-a-informacao/atos-normativos/resolucoes/2022/resolucao-no-674.pdf/view' },
             { label: 'ICMJE — recomendações', description: 'Autoria, ética, preparo do manuscrito, referências e submissão em revistas médicas.', url: 'https://www.icmje.org/recommendations/' },
-            { label: 'COPE — práticas centrais', description: 'Integridade, autoria, conflitos de interesse, dados e correções editoriais.', url: 'https://publicationethics.org/core-practices' },
+            { label: 'CNPq — integridade na pesquisa', description: 'Diretrizes brasileiras sobre autoria, citações, dados, plágio e transparência no uso de IA.', url: 'https://www.gov.br/cnpq/pt-br/composicao/comissao-de-integridade/diretrizes' },
+            { label: 'IPEN — prevenção de plágio', description: 'Seleção de códigos e guias brasileiros sobre integridade e respeito aos direitos autorais.', url: 'https://www.gov.br/ipen/pt-br/biblioteca/biblioteca-informa/prevencao-de-plagio' },
             { label: 'DOAJ — transparência editorial', description: 'Princípios para reconhecer periódicos abertos com práticas editoriais transparentes.', url: 'https://doaj.org/apply/transparency/' },
+        ],
+    },
+    {
+        title: 'Planejamento e gestão do SUS',
+        links: [
+            { label: 'Ministério da Saúde — Guia PMS 2026–2029', description: 'Guia prático com análise situacional, SWOT/FOFA, árvore de problemas, GUT, metas e indicadores.', url: 'https://www.gov.br/saude/pt-br/centrais-de-conteudo/publicacoes/guias-e-manuais/2025/guia-pratico-de-elaboracao-de-plano-municipal-de-saude-2026-2029.pdf' },
+            { label: 'Instrumentos de Planejamento do SUS', description: 'Plano de Saúde, Programação Anual, relatórios quadrimestrais e Relatório Anual de Gestão.', url: 'https://www.gov.br/saude/pt-br/acesso-a-informacao/gestao-do-sus/instrumentos-de-planejamento' },
+            { label: 'DigiSUS Gestor — acesso público', description: 'Consulta pública aos instrumentos de planejamento, metas e indicadores de estados e municípios.', url: 'https://digisusgmp.saude.gov.br/' },
+            { label: 'DATASUS — Informações de Saúde', description: 'Dados para análise da situação sanitária e apoio à tomada de decisão baseada em evidências.', url: 'https://datasus.saude.gov.br/informacoes-de-saude-tabnet/' },
         ],
     },
 ];
@@ -176,6 +197,8 @@ const getAppIcon = (id: AppID) => {
       return <Settings size={14} className="text-slate-400"/>;
     case AppID.BANNER:
       return <Monitor size={14} className="text-purple-400"/>;
+    case AppID.HEALTH_MANAGEMENT:
+      return <HeartPulse size={14} className="text-cyan-400"/>;
     default:
       return <Monitor size={14} />;
   }
@@ -220,7 +243,7 @@ const App: React.FC = () => {
   
   // Game State
   const [xp, setXp] = useState(0);
-  const [gameStats, setGameStats] = useState<GameStats>({ badSearchQueries: 0, wrongDesignChoices: 0, picoRetries: 0, articlesRead: 0, quizMistakes: 0, predatorySubmission: false });
+  const [gameStats, setGameStats] = useState<GameStats>({ badSearchQueries: 0, wrongDesignChoices: 0, picoRetries: 0, articlesRead: 0, quizMistakes: 0, predatorySubmission: false, managementMistakes: 0, integrityMistakes: 0 });
   const [currentStep, setCurrentStep] = useState<EcologicalStep>(EcologicalStep.SCENARIO_SELECTION);
   const [clipboard, setClipboard] = useState<ClipboardItem | null>(null);
   const [fileSystem, setFileSystem] = useState<VirtualFile[]>([]);
@@ -475,16 +498,42 @@ const App: React.FC = () => {
 
   // Handle Lattes success
   const handleLattesSuccess = () => {
-      setCurrentStep(EcologicalStep.COMPLETED);
-      setShowFinishPrompt(true);
+      setCurrentStep(EcologicalStep.HEALTH_MANAGEMENT);
+      setXp(prev => prev + 100);
+      setWindows(previous => {
+          const maximumZ = Math.max(...(Object.values(previous) as WindowState[]).map(windowState => windowState.zIndex));
+          return { ...previous, [AppID.HEALTH_MANAGEMENT]: { ...previous[AppID.HEALTH_MANAGEMENT], isOpen: true, isMinimized: false, zIndex: maximumZ + 1 } };
+      });
+      setActiveAppId(AppID.HEALTH_MANAGEMENT);
+      setShowMissionWidget(false);
+      setPopup({
+          title: 'Nova missão: da pesquisa à gestão do SUS',
+          content: 'Seu portfólio científico está completo, mas a jornada ainda não terminou. A Secretaria Municipal de Saúde quer transformar os achados do estudo em um plano de ação. A **Sala de Situação SUS** foi aberta para a missão final.'
+      });
   }
+
+  const handleHealthManagementComplete = (score: number) => {
+      setFileSystem(previous => previous.some(file => file.id === 'produto-tecnico-sus') ? previous : [...previous, {
+          id: 'produto-tecnico-sus',
+          name: 'Nota_Tecnica_Plano_Municipal_Saude.doc',
+          type: 'doc',
+          folder: 'documents',
+          content: { text: `PRODUTO TÉCNICO — SALA DE SITUAÇÃO SUS\n\nCenário: ${currentScenario?.title || 'Estudo epidemiológico'}\nDesempenho na missão de gestão: ${score}%.\n\nO produto integra diagnóstico situacional, indicador, análise SWOT/FOFA, Ishikawa, priorização GUT, intervenção, meta SMART e monitoramento.` },
+          createdAt: new Date()
+      }]);
+      setCurrentStep(EcologicalStep.COMPLETED);
+      setXp(prev => prev + 300);
+      closeWindow(AppID.HEALTH_MANAGEMENT);
+      setShowFinishPrompt(true);
+  };
 
   // Calculate Skill Scores
   const calculateSkills = () => {
       const methodScore = Math.max(0, 100 - (gameStats.wrongDesignChoices * 30) - (gameStats.picoRetries * 15));
       const ethicsScore = Math.max(0, 100 - (gameStats.predatorySubmission ? 50 : 0));
       const statsScore = Math.max(0, 100 - (gameStats.quizMistakes * 20));
-      return { methodScore, ethicsScore, statsScore };
+      const managementScore = Math.max(60, 100 - ((gameStats.managementMistakes || 0) * 5));
+      return { methodScore, ethicsScore, statsScore, managementScore };
   }
 
   const buildPersonalizedDebrief = () => {
@@ -542,6 +591,13 @@ const App: React.FC = () => {
           strengths.push('Você também sintetizou o estudo em um banner científico completo.');
       }
 
+      if ((gameStats.managementMistakes || 0) === 0 && currentStep >= EcologicalStep.COMPLETED) {
+          strengths.push('Na Sala de Situação SUS, você conectou indicador, causas, prioridade, orçamento, meta e monitoramento sem erros registrados.');
+      } else if ((gameStats.managementMistakes || 0) > 0) {
+          reviewPoints.push(`Na missão de gestão, foram necessárias ${gameStats.managementMistakes} revisão(ões) de decisão. Retome SWOT/FOFA, Ishikawa, GUT e a formulação de metas SMART.`);
+          reviewPlan.push('Refaça a cadeia: problema → causas → prioridade → ação → indicador → meta → monitoramento.');
+      }
+
       if (strengths.length === 0) {
           strengths.push('Você percorreu todas as etapas e concluiu o ciclo da pesquisa, da pergunta à divulgação científica.');
       }
@@ -567,12 +623,19 @@ const App: React.FC = () => {
     if (currentStep === EcologicalStep.WRITING && id === AppID.WORD) {
       return 'ring-4 ring-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.8)] animate-pulse scale-105';
     }
+    if (currentStep === EcologicalStep.HEALTH_MANAGEMENT && id === AppID.HEALTH_MANAGEMENT) {
+      return 'ring-4 ring-cyan-400 shadow-[0_0_18px_rgba(34,211,238,0.85)] animate-pulse scale-105';
+    }
     return '';
   };
 
   const toggleWindow = (id: AppID, startPath?: 'root' | 'trash') => {
       if (id === AppID.BANNER && currentStep < EcologicalStep.BANNER_CREATION && !emails.some(e => e.hasAction)) {
           setPopup({ title: 'Aplicativo ainda bloqueado', content: 'Envie o manuscrito ao orientador pelo **Pigmail** e aguarde o parecer antes de iniciar o banner.' });
+          return;
+      }
+      if (id === AppID.HEALTH_MANAGEMENT && currentStep < EcologicalStep.HEALTH_MANAGEMENT) {
+          setPopup({ title: 'Sala de Situação ainda bloqueada', content: 'Conclua a pesquisa, publique o trabalho e finalize o portfólio no **Currículo Lattes**. Depois, a Secretaria Municipal enviará a missão de gestão.' });
           return;
       }
       
@@ -655,7 +718,7 @@ const App: React.FC = () => {
       }
   };
 
-  const { methodScore, ethicsScore, statsScore } = calculateSkills();
+  const { methodScore, ethicsScore, statsScore, managementScore } = calculateSkills();
   const finalDebrief = buildPersonalizedDebrief();
 
   // --- Render ---
@@ -762,6 +825,15 @@ const App: React.FC = () => {
                                         <div className={`h-full rounded-full ${statsScore > 80 ? 'bg-purple-500' : 'bg-orange-500'}`} style={{width: `${statsScore}%`}}></div>
                                     </div>
                                 </div>
+                                <div>
+                                    <div className="flex justify-between text-xs font-bold mb-1 text-slate-600">
+                                        <span className="flex items-center gap-1"><HeartPulse size={14}/> Gestão em Saúde</span>
+                                        <span>{managementScore}%</span>
+                                    </div>
+                                    <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                                        <div className={`h-full rounded-full ${managementScore > 80 ? 'bg-cyan-500' : 'bg-amber-500'}`} style={{width: `${managementScore}%`}}></div>
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="space-y-3" aria-label="Debriefing personalizado da partida">
@@ -812,7 +884,7 @@ const App: React.FC = () => {
                         <p className="text-slate-600 text-xl text-center mb-8 max-w-md">
                             Certificamos que o aluno completou com êxito o módulo prático de:
                         </p>
-                        <h2 className="text-2xl md:text-4xl font-bold text-blue-900 mb-8 border-y-2 border-slate-200 py-6 text-center">Estudos Ecológicos & Dados Secundários</h2>
+                        <h2 className="text-2xl md:text-4xl font-bold text-blue-900 mb-8 border-y-2 border-slate-200 py-6 text-center">Estudos Ecológicos, Dados Secundários & Gestão em Saúde</h2>
                         <div className="flex gap-8 mt-auto w-full justify-center">
                            <div className="text-center">
                                <div className="h-px w-40 bg-black mb-2"></div>
@@ -957,17 +1029,43 @@ const App: React.FC = () => {
                                     <h3 className="font-bold text-lg text-slate-800 mb-2 border-l-4 border-indigo-500 pl-2">9. Comunicação e integridade científica</h3>
                                     <ul className="list-disc pl-5 text-sm text-slate-600 space-y-1.5">
                                         <li>O manuscrito deve permitir reprodução: pergunta, fonte, população, período, variáveis, análise, resultados e limitações precisam estar claros.</li>
+                                        <li><strong>Plágio</strong> não é apenas copiar palavra por palavra: apresentar ideia, estrutura, dado, imagem ou tradução de outra fonte sem crédito também viola a integridade.</li>
+                                        <li><strong>Paráfrase:</strong> compreenda e reescreva genuinamente, sem apenas trocar sinônimos, e mantenha a citação. <strong>Citação direta:</strong> reproduza com fidelidade, use aspas ou bloco e informe página quando aplicável.</li>
+                                        <li>Evite autoplágio: reutilização relevante de texto ou resultados próprios anteriores também deve ser identificada e citada. Confira se toda citação aparece nas referências e se toda referência citada foi realmente consultada.</li>
+                                        <li>Ferramentas de similaridade ajudam na triagem, mas não decidem sozinhas se há plágio. O uso de IA deve seguir as regras institucionais e editoriais, ser transparente quando exigido e nunca substituir a conferência das fontes.</li>
                                         <li>No banner, priorize legibilidade, hierarquia visual e poucos resultados essenciais; todo gráfico precisa de título, eixos, unidade e fonte.</li>
                                         <li>Escolha periódico e congresso pelo escopo, público e transparência editorial — não apenas por prestígio ou promessa de rapidez.</li>
                                         <li>No Lattes, registre cada produção na categoria e situação verdadeiras. Projeto em andamento, manuscrito aceito e artigo publicado não são equivalentes.</li>
                                     </ul>
                                 </section>
 
+                                <section>
+                                    <h3 className="font-bold text-lg text-slate-800 mb-2 border-l-4 border-cyan-500 pl-2">10. Planejamento e instrumentos do SUS</h3>
+                                    <div className="grid grid-cols-1 gap-3 text-sm text-slate-600 md:grid-cols-2">
+                                        <div className="rounded-lg bg-slate-50 p-3"><strong>Plano de Saúde (4 anos)</strong><p>Parte da análise situacional e explicita diretrizes, objetivos, metas e indicadores.</p></div>
+                                        <div className="rounded-lg bg-slate-50 p-3"><strong>Programação Anual de Saúde</strong><p>Anualiza e operacionaliza as intenções do plano, conectando ações e recursos.</p></div>
+                                        <div className="rounded-lg bg-slate-50 p-3"><strong>RDQA</strong><p>Acompanha quadrimestralmente a execução das metas e dos recursos da programação.</p></div>
+                                        <div className="rounded-lg bg-slate-50 p-3"><strong>Relatório Anual de Gestão</strong><p>Apresenta os resultados alcançados e apoia avaliação, transparência e controle social.</p></div>
+                                    </div>
+                                    <p className="mt-3 text-sm text-slate-600">Uma cadeia coerente liga necessidade de saúde → diretriz → objetivo → meta → indicador → ação → recurso → monitoramento. Indicador sem decisão vira apenas número; decisão sem indicador dificulta saber se houve avanço.</p>
+                                </section>
+
+                                <section>
+                                    <h3 className="font-bold text-lg text-slate-800 mb-2 border-l-4 border-fuchsia-500 pl-2">11. Ferramentas de gestão em saúde</h3>
+                                    <div className="space-y-3 text-sm text-slate-600">
+                                        <div className="rounded-xl border border-slate-200 p-4"><strong>SWOT/FOFA — leitura do contexto</strong><p className="mt-1">Forças e fraquezas são internas à organização; oportunidades e ameaças pertencem ao ambiente externo. A matriz ajuda a formular estratégias, mas não substitui indicadores nem participação social.</p></div>
+                                        <div className="rounded-xl border border-slate-200 p-4"><strong>Ishikawa ou árvore de problemas — investigação de causas</strong><p className="mt-1">Organize causas potenciais em categorias como pessoas, processos, tecnologia, materiais, gestão e território. Diferencie causa de consequência e confirme as hipóteses com dados; o objetivo não é procurar culpados.</p></div>
+                                        <div className="rounded-xl border border-slate-200 p-4"><strong>Matriz GUT — priorização</strong><p className="mt-1">Atribua notas para Gravidade, Urgência e Tendência e calcule G × U × T. A ordenação apoia a decisão, que ainda deve considerar equidade, magnitude, vulnerabilidade, participação e viabilidade.</p></div>
+                                        <div className="rounded-xl border border-slate-200 p-4"><strong>5W2H e meta SMART — execução</strong><p className="mt-1">Defina o que, por que, onde, quando, quem, como e quanto custa. Uma meta SMART explicita indicador, linha de base, valor-alvo, população/território e prazo.</p></div>
+                                        <div className="rounded-xl border border-slate-200 p-4"><strong>PDCA — aprendizagem contínua</strong><p className="mt-1">Planeje, execute em escala adequada, verifique indicadores de processo e resultado e ajuste. Não espere apenas o fim do ciclo para descobrir que uma ação não funcionou.</p></div>
+                                    </div>
+                                </section>
+
                                 <section className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-4 md:p-6">
                                     <div className="mb-5">
                                         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-600">Biblioteca recomendada</p>
                                         <h3 className="mt-1 text-xl font-bold text-slate-900">Fontes confiáveis para continuar estudando</h3>
-                                        <p className="mt-2 text-sm leading-relaxed text-slate-600">Uma seleção de materiais oficiais e referências metodológicas para aprofundar epidemiologia, bioestatística, busca, escrita e integridade científica.</p>
+                                        <p className="mt-2 text-sm leading-relaxed text-slate-600">Uma seleção revisada de materiais oficiais e referências metodológicas para aprofundar epidemiologia, bioestatística, busca, escrita, integridade e gestão do SUS. Os links abrem em uma nova aba.</p>
                                     </div>
                                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                                         {REVIEW_SOURCE_GROUPS.map(group => (
@@ -975,7 +1073,7 @@ const App: React.FC = () => {
                                                 <h4 className="mb-3 text-sm font-bold text-slate-800">{group.title}</h4>
                                                 <div className="space-y-3">
                                                     {group.links.map(link => (
-                                                        <a key={link.url} href={link.url} target="_blank" rel="noreferrer" className="group block rounded-lg border border-transparent p-2 transition-colors hover:border-blue-200 hover:bg-blue-50">
+                                                        <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer" className="group block rounded-lg border border-transparent p-2 transition-colors hover:border-blue-200 hover:bg-blue-50">
                                                             <span className="flex items-start justify-between gap-2 text-sm font-bold text-blue-700 group-hover:underline">
                                                                 {link.label}<span aria-hidden="true" className="shrink-0">↗</span>
                                                             </span>
@@ -1012,9 +1110,9 @@ const App: React.FC = () => {
                   <div className="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-5">
                       <Award size={34}/>
                   </div>
-                  <h2 className="text-2xl font-black text-slate-900 mb-2">Portfólio acadêmico completo!</h2>
+                  <h2 className="text-2xl font-black text-slate-900 mb-2">Jornada científica e de gestão completa!</h2>
                   <p className="text-sm text-slate-600 leading-relaxed">
-                      Projeto, artigo, banner e participação em congresso foram cadastrados no currículo simulado. Você pode emitir o certificado agora ou continuar explorando o Pigames, o Pigmail e os materiais de revisão.
+                      Você concluiu o estudo, a divulgação científica, o portfólio e a Sala de Situação SUS. A nota técnica de gestão foi salva em Meus Arquivos. Agora pode emitir o certificado ou continuar explorando o ambiente.
                   </p>
                   <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <button onClick={() => setShowFinishPrompt(false)} className="px-4 py-3 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-50">
@@ -1036,6 +1134,7 @@ const App: React.FC = () => {
              {id: AppID.BROWSER, icon: <Globe size={32} className="text-blue-500"/>, label: "Piggle Chrome"},
              {id: AppID.SHEET, icon: <FileSpreadsheet size={32} className="text-green-600"/>, label: "Pigxcel"},
              {id: AppID.WORD, icon: <FileText size={32} className="text-blue-800"/>, label: "Pigword"},
+             {id: AppID.HEALTH_MANAGEMENT, icon: <HeartPulse size={32} className="text-cyan-600"/>, label: "Sala SUS"},
          ].map(app => (
              <div key={app.id} onDoubleClick={() => toggleWindow(app.id)} className="flex flex-col items-center gap-1 group cursor-pointer w-24 p-2 hover:bg-white/20 rounded border border-transparent hover:border-white/30 transition-all relative">
                  <div className={`w-14 h-14 bg-white/90 rounded-xl flex items-center justify-center shadow-lg group-active:scale-95 transition-transform backdrop-blur-sm ${getShortcutGlow(app.id)}`}>{app.icon}</div>
@@ -1060,6 +1159,7 @@ const App: React.FC = () => {
                    <div className="flex items-center gap-2 mb-2 border-b border-slate-800 pb-2">
                        <Briefcase size={15} className="text-yellow-400"/>
                        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest font-mono">Metas de Pesquisa</span>
+                       <button onClick={() => setShowMissionWidget(false)} className="ml-auto rounded p-1 text-slate-500 hover:bg-slate-800 hover:text-white" title="Recolher metas" aria-label="Recolher metas"><XCircle size={14}/></button>
                    </div>
                    <h3 className="font-extrabold text-white text-xs leading-tight mb-3">{currentScenario.title}</h3>
                    
@@ -1116,9 +1216,15 @@ const App: React.FC = () => {
                            },
                            {
                                title: "9. Portfólio Lattes",
-                               description: "Cadastre projeto, artigo, banner e congresso. Você decide quando finalizar e emitir o certificado.",
-                               isDone: currentStep === EcologicalStep.COMPLETED,
+                               description: "Cadastre projeto, artigo, banner e congresso para liberar a missão final de gestão.",
+                               isDone: currentStep > EcologicalStep.LATTES_REGISTRATION,
                                isActive: currentStep === EcologicalStep.LATTES_REGISTRATION
+                           },
+                           {
+                               title: "10. Sala de Situação SUS",
+                               description: "Transforme a evidência em diagnóstico, indicador, dashboard, análise de causas, prioridade, meta e plano monitorável.",
+                               isDone: currentStep === EcologicalStep.COMPLETED,
+                               isActive: currentStep === EcologicalStep.HEALTH_MANAGEMENT
                            }
                        ].map((meta, index) => (
                            <div key={index} className={`p-2.5 rounded-xl border transition-all ${
@@ -1142,7 +1248,11 @@ const App: React.FC = () => {
                    </div>
                </div>
           </div>
-      ) : !showMissionWidget && isLoggedIn && (
+      ) : !showMissionWidget && isLoggedIn && currentScenario && (!windows[AppID.HEALTH_MANAGEMENT].isOpen || windows[AppID.HEALTH_MANAGEMENT].isMinimized) ? (
+          <button className="absolute top-20 right-3 md:top-4 md:right-4 z-20 rounded-full border-2 border-white bg-slate-900 px-4 py-2 text-xs font-bold text-white shadow-xl hover:bg-slate-800" onClick={() => setShowMissionWidget(true)}>
+              <Briefcase size={13} className="mr-1 inline text-yellow-400"/> Ver metas
+          </button>
+      ) : !showMissionWidget && isLoggedIn && !currentScenario && (
           <div className="absolute top-4 right-4 z-0 animate-pulse cursor-pointer" onClick={() => setShowOnboarding(false)}>
               <div className="bg-red-600 text-white px-4 py-2 rounded-full shadow-lg font-bold text-xs border-2 border-white">
                   ⚠ Selecione um Protocolo
@@ -1202,6 +1312,7 @@ const App: React.FC = () => {
                       </div>
                   )}
                   {win.id === AppID.BANNER && <BannerDesigner onFinish={() => handleEmailSend('BANNER_FINISHED')}/>}
+                  {win.id === AppID.HEALTH_MANAGEMENT && <HealthManagement currentScenario={currentScenario} inputUser={inputUser} onMistake={() => updateStats('managementMistakes')} onComplete={handleHealthManagementComplete}/>}
               </WindowFrame>
           ))}
       </div>

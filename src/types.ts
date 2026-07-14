@@ -6,7 +6,8 @@ export enum AppID {
   GUIDE = 'guide',
   SETTINGS = 'settings',
   EXPLORER = 'explorer',
-  BANNER = 'banner'
+  BANNER = 'banner',
+  HEALTH_MANAGEMENT = 'health-management'
 }
 
 export interface WindowState {
@@ -76,7 +77,8 @@ export enum EcologicalStep {
   JOURNAL_SUBMISSION = 9,
   CONGRESS_SUBMISSION = 10,
   LATTES_REGISTRATION = 11,
-  COMPLETED = 12
+  HEALTH_MANAGEMENT = 12,
+  COMPLETED = 13
 }
 
 export interface ClipboardItem {
@@ -121,6 +123,8 @@ export interface GameStats {
     
     // New Skills Tracking
     predatorySubmission?: boolean;
+    managementMistakes?: number;
+    integrityMistakes?: number;
 }
 
 export interface GameState {
