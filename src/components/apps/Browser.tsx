@@ -20,6 +20,7 @@ interface BrowserProps {
   onLattesSuccess?: () => void;
   inputUser?: string;
   bannerCompleted?: boolean;
+  navigationRequest?: { target: 'journal' | 'congress' | 'lattes' | 'pigames'; nonce: number } | null;
 }
 
 // Updated Educational Emails with Quizzes
@@ -125,7 +126,7 @@ const EDUCATIONAL_EMAILS: Email[] = [
     }
 ];
 
-export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, onEmailSend, fileSystem, emails, onSaveReference, savedReferences, onLogAction, onQuizComplete, currentStep, onJournalSubmit, onCongressSuccess, onLattesSuccess, inputUser, bannerCompleted = false }) => {
+export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, onEmailSend, fileSystem, emails, onSaveReference, savedReferences, onLogAction, onQuizComplete, currentStep, onJournalSubmit, onCongressSuccess, onLattesSuccess, inputUser, bannerCompleted = false, navigationRequest = null }) => {
   const [history, setHistory] = useState<string[]>(['home']);
   const [historyIndex, setHistoryIndex] = useState(0);
   
@@ -185,6 +186,9 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
   const [pigamesLives, setPigamesLives] = useState(3);
   const [pigamesCompletedCount, setPigamesCompletedCount] = useState<string[]>([]);
   const [pigamesSequence, setPigamesSequence] = useState<number[]>([]);
+  const [pigamesMatches, setPigamesMatches] = useState<Record<string, string>>({});
+  const [pigamesCalculation, setPigamesCalculation] = useState('');
+  const [pigamesStreak, setPigamesStreak] = useState(0);
   const [lattesItems, setLattesItems] = useState<string[]>([]);
   const [congressRegistered, setCongressRegistered] = useState(false);
   const [congressError, setCongressError] = useState('');
@@ -387,12 +391,20 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
             setPigamesAnswered(false);
             setPigamesSelectedOption(null);
             setPigamesFeedback(null);
+            setPigamesMatches({});
+            setPigamesCalculation('');
         }
         
         setInputUrl(getUrlForState(target));
         setIsLoading(false);
     }, 600);
   };
+
+  useEffect(() => {
+      if (navigationRequest) navigate(navigationRequest.target);
+      // The nonce intentionally makes repeated requests to the same destination navigable.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigationRequest?.nonce]);
 
   const handleBack = () => {
       if (historyIndex > 0) {
@@ -1482,7 +1494,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
   );
 
   const renderPigames = () => {
-      const questions: Array<{ id: string; category: string; question: string; options: string[]; correctIdx: number; explanation: string; mode?: 'sequence'; mechanic?: string }> = [
+      const questions: Array<{ id: string; category: string; question: string; options: string[]; correctIdx: number; explanation: string; mode?: 'sequence' | 'matching' | 'calculation'; mechanic?: string; matchingItems?: Array<{ id: string; label: string; correct: string }> }> = [
           {
               id: "q1",
               category: "Estudos Ecológicos",
@@ -1593,6 +1605,13 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
               id: "q9",
               category: "Gestão SUS: Matriz SWOT/FOFA",
               mechanic: "CLASSIFICAÇÃO",
+              mode: "matching",
+              matchingItems: [
+                  { id: 'team', label: 'Equipe de vigilância qualificada', correct: 'Força' },
+                  { id: 'records', label: 'Prontuários desatualizados', correct: 'Fraqueza' },
+                  { id: 'university', label: 'Parceria oferecida por universidade', correct: 'Oportunidade' },
+                  { id: 'budget', label: 'Risco de redução de repasses', correct: 'Ameaça' }
+              ],
               question: "Uma Secretaria Municipal tem equipe de vigilância qualificada, prontuários desatualizados, parceria oferecida por uma universidade e risco de redução de repasses. Qual classificação SWOT está correta?",
               options: [
                   "Equipe = força; prontuários = fraqueza; parceria = oportunidade; redução de repasses = ameaça.",
@@ -1610,17 +1629,18 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
               question: "As notificações chegam atrasadas. Qual uso do Ishikawa é mais adequado?",
               options: [
                   "Escolher imediatamente um profissional para responsabilizar pelo problema.",
-                  "Organizar causas potenciais em categorias — pessoas, processos, tecnologia, materiais e território — e verificar quais são sustentadas por evidências.",
+                  "Organizar causas potenciais nos 6M — Mão de obra/Pessoas, Método/Processos, Máquina/Tecnologia, Material/Insumos, Meio ambiente/Território e Medida/Mensuração — e verificar quais são sustentadas por evidências.",
                   "Usar o diagrama para provar que uma causa isolada explica todos os atrasos.",
                   "Substituir indicadores e a análise de dados por uma sessão de opiniões."
               ],
               correctIdx: 1,
-              explanation: "O Ishikawa ajuda a estruturar hipóteses causais e evitar explicações simplistas. As causas levantadas ainda precisam ser verificadas; a ferramenta não prova causalidade nem deve ser usada para procurar culpados."
+              explanation: "O Ishikawa ajuda a estruturar hipóteses causais e evitar explicações simplistas. Os 6M clássicos podem ser traduzidos ao contexto da saúde, e as causas levantadas ainda precisam ser verificadas; a ferramenta não prova causalidade nem procura culpados."
           },
           {
               id: "q11",
               category: "Gestão SUS: Priorização GUT",
-              mechanic: "DECISÃO SOB PRESSÃO",
+              mechanic: "CÁLCULO RELÂMPAGO",
+              mode: "calculation",
               question: "Três problemas receberam notas de Gravidade, Urgência e Tendência: A = 5×4×5; B = 4×3×3; C = 3×2×2. Pelo produto G×U×T, qual tem maior prioridade inicial?",
               options: [
                   "Problema A, com 100 pontos.",
@@ -1676,6 +1696,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
               playBeep(isCorrect);
 
               if (isCorrect) {
+                  setPigamesStreak(previous => previous + 1);
                   const alreadyDone = pigamesCompletedCount.includes(currentQuestion.id);
                   if (!alreadyDone) {
                       setPigamesCompletedCount(prev => [...prev, currentQuestion.id]);
@@ -1684,6 +1705,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                   }
                   setPigamesFeedback(`Parabéns! Resposta Correta! ${currentQuestion.explanation}`);
               } else {
+                  setPigamesStreak(0);
                   setPigamesLives(prev => Math.max(0, prev - 1));
                   setPigamesFeedback(`Ops, resposta incorreta! A resposta certa era: "${currentQuestion.options[currentQuestion.correctIdx]}". Leia os tutoriais no Pigmail e tente novamente para fixar o conceito.`);
               }
@@ -1709,6 +1731,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
               const alreadyDone = pigamesCompletedCount.includes(currentQuestion.id);
               playBeep(true);
               setPigamesAnswered(true);
+              setPigamesStreak(previous => previous + 1);
               setPigamesSelectedOption(currentQuestion.correctIdx);
               if (!alreadyDone) {
                   setPigamesCompletedCount(previous => [...previous, currentQuestion.id]);
@@ -1716,6 +1739,53 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                   onQuizComplete(20);
               }
               setPigamesFeedback(`Sequência concluída! ${currentQuestion.explanation}`);
+          }
+      };
+
+      const handleMatchingSubmit = () => {
+          if (!currentQuestion || currentQuestion.mode !== 'matching' || pigamesAnswered || pigamesLives <= 0) return;
+          const items = currentQuestion.matchingItems || [];
+          if (items.some(item => !pigamesMatches[item.id])) {
+              setPigamesFeedback('Classifique os quatro elementos antes de validar a matriz.');
+              return;
+          }
+          const isCorrect = items.every(item => pigamesMatches[item.id] === item.correct);
+          playBeep(isCorrect);
+          setPigamesAnswered(true);
+          setPigamesSelectedOption(isCorrect ? currentQuestion.correctIdx : -1);
+          if (isCorrect) {
+              setPigamesStreak(previous => previous + 1);
+              if (!pigamesCompletedCount.includes(currentQuestion.id)) {
+                  setPigamesCompletedCount(previous => [...previous, currentQuestion.id]);
+                  setPigamesScore(previous => previous + 20);
+                  onQuizComplete(20);
+              }
+              setPigamesFeedback(`Matriz fechada! ${currentQuestion.explanation}`);
+          } else {
+              setPigamesStreak(0);
+              setPigamesLives(previous => Math.max(0, previous - 1));
+              setPigamesFeedback('Revise os eixos: força/fraqueza são internas; oportunidade/ameaça vêm do ambiente externo.');
+          }
+      };
+
+      const handleCalculationSubmit = () => {
+          if (!currentQuestion || currentQuestion.mode !== 'calculation' || pigamesAnswered || pigamesLives <= 0) return;
+          const isCorrect = Number(pigamesCalculation.replace(',', '.')) === 100;
+          playBeep(isCorrect);
+          setPigamesAnswered(true);
+          setPigamesSelectedOption(isCorrect ? currentQuestion.correctIdx : -1);
+          if (isCorrect) {
+              setPigamesStreak(previous => previous + 1);
+              if (!pigamesCompletedCount.includes(currentQuestion.id)) {
+                  setPigamesCompletedCount(previous => [...previous, currentQuestion.id]);
+                  setPigamesScore(previous => previous + 20);
+                  onQuizComplete(20);
+              }
+              setPigamesFeedback(`Cálculo correto: 5 × 4 × 5 = 100. ${currentQuestion.explanation}`);
+          } else {
+              setPigamesStreak(0);
+              setPigamesLives(previous => Math.max(0, previous - 1));
+              setPigamesFeedback('O produto informado não corresponde a 5 × 4 × 5. Refaça a multiplicação dos três critérios.');
           }
       };
 
@@ -1728,6 +1798,9 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
           setPigamesSelectedOption(null);
           setPigamesFeedback(null);
           setPigamesSequence([]);
+          setPigamesMatches({});
+          setPigamesCalculation('');
+          setPigamesStreak(0);
       };
 
       // Rank mapping
@@ -1750,6 +1823,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                   
                   {/* Performance Indicators */}
                   <div className="flex items-center gap-5">
+                      <div className={`hidden sm:block rounded-lg border px-2.5 py-1 text-[10px] font-black font-mono ${pigamesStreak >= 2 ? 'border-orange-500 bg-orange-950/40 text-orange-300 animate-pulse' : 'border-indigo-800 text-indigo-400'}`}>COMBO ×{pigamesStreak}</div>
                       <div className="text-right">
                           <div className="text-[9px] text-slate-500 font-bold uppercase tracking-wider font-mono">Rank Acadêmico</div>
                           <div className="text-xs font-bold text-yellow-400">{getAcademicRank()}</div>
@@ -1817,6 +1891,8 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                                            setPigamesSelectedOption(null);
                                            setPigamesFeedback(null);
                                            setPigamesSequence([]);
+                                           setPigamesMatches({});
+                                           setPigamesCalculation('');
                                       }}
                                       className={`p-4 rounded-2xl text-left border transition-all flex flex-col justify-between group h-36 relative ${
                                           isCompleted 
@@ -1826,7 +1902,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                                   >
                                       <div>
                                           <div className="flex justify-between items-start mb-1">
-                                              <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold font-mono">Fase 0{idx+1}</span>
+                                              <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold font-mono">Fase {String(idx + 1).padStart(2, '0')}</span>
                                               {isCompleted && <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold font-mono">CONCLUÍDO</span>}
                                           </div>
                                            <h3 className="font-bold text-xs text-slate-100 group-hover:text-white leading-tight">{q.category}</h3>
@@ -1862,7 +1938,18 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                               </div>
                           )}
 
-                          <div className="space-y-3">
+                          {currentQuestion?.mode === 'matching' && (
+                              <div className="space-y-3">
+                                  {currentQuestion.matchingItems?.map(item => <div key={item.id} className="rounded-xl border border-indigo-900 bg-indigo-950/40 p-3"><div className="mb-2 text-xs text-indigo-100">{item.label}</div><select disabled={pigamesAnswered} value={pigamesMatches[item.id] || ''} onChange={event => setPigamesMatches(previous => ({ ...previous, [item.id]: event.target.value }))} className="w-full rounded-lg border border-indigo-700 bg-[#0f0e26] p-2 text-xs text-white"><option value="">Escolha...</option>{['Força','Fraqueza','Oportunidade','Ameaça'].map(option => <option key={option}>{option}</option>)}</select></div>)}
+                                  {!pigamesAnswered && <button onClick={handleMatchingSubmit} className="w-full rounded-xl bg-yellow-500 py-3 text-xs font-black text-slate-950 hover:bg-yellow-400">Validar todas as classificações</button>}
+                              </div>
+                          )}
+
+                          {currentQuestion?.mode === 'calculation' && (
+                              <div className="rounded-xl border border-indigo-800 bg-indigo-950/40 p-5"><label className="text-xs font-bold text-indigo-200">Digite o produto G × U × T do problema A</label><div className="mt-3 flex gap-2"><input disabled={pigamesAnswered} inputMode="numeric" value={pigamesCalculation} onChange={event => setPigamesCalculation(event.target.value)} placeholder="Resultado" className="min-w-0 flex-1 rounded-xl border border-indigo-700 bg-[#0f0e26] px-4 py-3 text-lg font-black text-yellow-300 outline-none focus:border-yellow-400"/><button disabled={pigamesAnswered || !pigamesCalculation} onClick={handleCalculationSubmit} className="rounded-xl bg-yellow-500 px-5 text-xs font-black text-slate-950 disabled:opacity-40">Calcular</button></div></div>
+                          )}
+
+                          {currentQuestion?.mode !== 'matching' && currentQuestion?.mode !== 'calculation' && <div className="space-y-3">
                               {currentQuestion?.options.map((opt, oIdx) => {
                                   let btnStyle = "bg-[#18163a] hover:bg-[#1d1b4a] border border-indigo-950 text-slate-300";
                                   if (currentQuestion.mode === 'sequence' && pigamesSequence.includes(oIdx) && !pigamesAnswered) {
@@ -1891,7 +1978,7 @@ export const Browser: React.FC<BrowserProps> = ({ onSaveFile, currentScenario, o
                                       </button>
                                   );
                               })}
-                          </div>
+                          </div>}
 
                           {pigamesFeedback && (
                               <div className={`mt-5 p-4 rounded-xl text-xs border animate-in slide-in-from-bottom-2 leading-relaxed ${

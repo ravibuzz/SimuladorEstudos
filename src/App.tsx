@@ -8,7 +8,7 @@ import { PaperWriter } from './components/apps/PaperWriter';
 import { Tutor } from './components/apps/Tutor';
 import { Explorer } from './components/apps/Explorer';
 import { BannerDesigner } from './components/apps/BannerDesigner';
-import { HealthManagement } from './components/apps/HealthManagement';
+import { HealthManagement, HealthManagementResult } from './components/apps/HealthManagement';
 import { AppID, WindowState, VirtualFile, Scenario, EcologicalStep, ClipboardItem, Email, ArticleHit, GameStats } from './types';
 import { setApiKey, validatePICO } from './services/geminiService';
 
@@ -259,6 +259,9 @@ const App: React.FC = () => {
   const [bannerCompleted, setBannerCompleted] = useState(false);
   const [showFinishPrompt, setShowFinishPrompt] = useState(false);
   const [showRestartPrompt, setShowRestartPrompt] = useState(false);
+  const [showJourneyMap, setShowJourneyMap] = useState(false);
+  const [healthResult, setHealthResult] = useState<HealthManagementResult | null>(null);
+  const [browserNavigationRequest, setBrowserNavigationRequest] = useState<{ target: 'journal' | 'congress' | 'lattes' | 'pigames'; nonce: number } | null>(null);
 
   // Phase 1 State
   const [selectedDesign, setSelectedDesign] = useState<string | null>(null);
@@ -490,10 +493,12 @@ const App: React.FC = () => {
   // Final Game Over Handler
   const handleJournalSubmissionSuccess = () => {
       setCurrentStep(EcologicalStep.CONGRESS_SUBMISSION);
+      setShowJourneyMap(true);
   }
 
   const handleCongressSuccess = () => {
       setCurrentStep(EcologicalStep.LATTES_REGISTRATION);
+      setShowJourneyMap(true);
   }
 
   // Handle Lattes success
@@ -512,19 +517,45 @@ const App: React.FC = () => {
       });
   }
 
-  const handleHealthManagementComplete = (score: number) => {
-      setFileSystem(previous => previous.some(file => file.id === 'produto-tecnico-sus') ? previous : [...previous, {
-          id: 'produto-tecnico-sus',
-          name: 'Nota_Tecnica_Plano_Municipal_Saude.doc',
-          type: 'doc',
-          folder: 'documents',
-          content: { text: `PRODUTO TÉCNICO — SALA DE SITUAÇÃO SUS\n\nCenário: ${currentScenario?.title || 'Estudo epidemiológico'}\nDesempenho na missão de gestão: ${score}%.\n\nO produto integra diagnóstico situacional, indicador, análise SWOT/FOFA, Ishikawa, priorização GUT, intervenção, meta SMART e monitoramento.` },
-          createdAt: new Date()
-      }]);
+  const handleHealthManagementComplete = (result: HealthManagementResult) => {
+      setHealthResult(result);
+      setFileSystem(previous => {
+          const withoutOldProducts = previous.filter(file => file.id !== 'produto-tecnico-sus' && file.id !== 'dashboard-sus');
+          return [...withoutOldProducts,
+              {
+                  id: 'dashboard-sus', name: 'Dashboard_Municipal_SUS.doc', type: 'doc', folder: 'documents',
+                  content: { text: `DASHBOARD MUNICIPAL SUS\n\nIndicador: ${result.indicator}\nLinha de base: ${result.baseline}\nMeta: ${result.target}\n\nComponentes selecionados: ${result.dashboardCards.join(', ')}.\nModo final de visualização: ${result.dashboardMode === 'technical' ? 'técnico' : 'cidadão'}.\n\nALERTA DE QUALIDADE\nCompletude simulada de 82%. Interpretar as comparações com cautela e revisar os registros periodicamente.\n\nCADEIA LÓGICA\nAções: ${result.interventions.join(' + ')}\nProcesso: ${result.processIndicator}\nResultado: ${result.resultStatement}\nImpacto: ${result.impactStatement}` }, createdAt: new Date()
+              },
+              {
+                  id: 'produto-tecnico-sus', name: 'Nota_Tecnica_Plano_Municipal_Saude.doc', type: 'doc', folder: 'documents',
+                  content: { text: `PRODUTO TÉCNICO — SALA DE SITUAÇÃO SUS\n\nCenário: ${currentScenario?.title || 'Estudo epidemiológico'}\nDesempenho na missão de gestão: ${result.score}%.\n\nMETA SMART\n${result.smartGoal}\n\nAÇÕES PRIORIZADAS\n${result.interventions.join('\n')}\n\nCONSEQUÊNCIAS ESPERADAS\n${result.consequences.join('\n')}\n\nA proposta integra diagnóstico situacional, dashboard, SWOT/FOFA, Ishikawa 6M, GUT, cadeia ação–processo–resultado–impacto e monitoramento.` }, createdAt: new Date()
+              }
+          ];
+      });
       setCurrentStep(EcologicalStep.COMPLETED);
       setXp(prev => prev + 300);
       closeWindow(AppID.HEALTH_MANAGEMENT);
       setShowFinishPrompt(true);
+  };
+
+  const openBrowserDestination = (target: 'journal' | 'congress' | 'lattes' | 'pigames') => {
+      setShowJourneyMap(false);
+      setBrowserNavigationRequest({ target, nonce: Date.now() });
+      setWindows(previous => {
+          const maximumZ = Math.max(...(Object.values(previous) as WindowState[]).map(windowState => windowState.zIndex));
+          return { ...previous, [AppID.BROWSER]: { ...previous[AppID.BROWSER], isOpen: true, isMinimized: false, zIndex: maximumZ + 1 } };
+      });
+      setActiveAppId(AppID.BROWSER);
+  };
+
+  const continueFinalJourney = () => {
+      if (currentStep === EcologicalStep.JOURNAL_SUBMISSION) return openBrowserDestination('journal');
+      if (currentStep === EcologicalStep.CONGRESS_SUBMISSION) return openBrowserDestination('congress');
+      if (currentStep === EcologicalStep.LATTES_REGISTRATION) return openBrowserDestination('lattes');
+      if (currentStep === EcologicalStep.HEALTH_MANAGEMENT) {
+          setShowJourneyMap(false); toggleWindow(AppID.HEALTH_MANAGEMENT); return;
+      }
+      if (currentStep === EcologicalStep.COMPLETED) { setShowJourneyMap(false); setShowFinishPrompt(true); }
   };
 
   // Calculate Skill Scores
@@ -836,6 +867,20 @@ const App: React.FC = () => {
                                 </div>
                             </div>
 
+                            <div className="rounded-lg border border-indigo-200 bg-gradient-to-br from-indigo-50 to-cyan-50 p-4">
+                                <h3 className="mb-3 text-xs font-black uppercase tracking-wider text-indigo-900">Linha do tempo da sua jornada</h3>
+                                <div className="space-y-2">
+                                    {[
+                                        ['1', 'Pergunta e desenho', 'PECO ecológica definida'],
+                                        ['2', 'Dados e análise', 'DATASUS + interpretação estatística'],
+                                        ['3', 'Comunicação científica', 'Manuscrito, banner e divulgação'],
+                                        ['4', 'Portfólio', 'Produções registradas no Lattes'],
+                                        ['5', 'Aplicação no SUS', healthResult ? `${healthResult.indicator} • ${healthResult.score}%` : 'Dashboard e plano municipal']
+                                    ].map(([number, title, detail], index, items) => <div key={String(number)} className="flex gap-3"><div className="flex flex-col items-center"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-[9px] font-black text-white">✓</span>{index < items.length - 1 && <span className="h-full w-px bg-indigo-200"/>}</div><div className="pb-2"><div className="text-xs font-black text-slate-800">{number}. {title}</div><div className="text-[10px] leading-relaxed text-slate-600">{detail}</div></div></div>)}
+                                </div>
+                                {healthResult && <div className="mt-2 rounded-lg border border-cyan-200 bg-white/70 p-2.5 text-[10px] leading-relaxed text-cyan-950"><strong>Cadeia final:</strong> {healthResult.interventions.join(' + ')} → {healthResult.resultStatement} → {healthResult.impactStatement}</div>}
+                            </div>
+
                             <div className="space-y-3" aria-label="Debriefing personalizado da partida">
                                 <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
                                     <h3 className="font-bold text-xs uppercase tracking-wider text-emerald-800 mb-2 flex items-center gap-2"><CheckCircle size={14}/> Decisões bem executadas</h3>
@@ -1054,7 +1099,7 @@ const App: React.FC = () => {
                                     <h3 className="font-bold text-lg text-slate-800 mb-2 border-l-4 border-fuchsia-500 pl-2">11. Ferramentas de gestão em saúde</h3>
                                     <div className="space-y-3 text-sm text-slate-600">
                                         <div className="rounded-xl border border-slate-200 p-4"><strong>SWOT/FOFA — leitura do contexto</strong><p className="mt-1">Forças e fraquezas são internas à organização; oportunidades e ameaças pertencem ao ambiente externo. A matriz ajuda a formular estratégias, mas não substitui indicadores nem participação social.</p></div>
-                                        <div className="rounded-xl border border-slate-200 p-4"><strong>Ishikawa ou árvore de problemas — investigação de causas</strong><p className="mt-1">Organize causas potenciais em categorias como pessoas, processos, tecnologia, materiais, gestão e território. Diferencie causa de consequência e confirme as hipóteses com dados; o objetivo não é procurar culpados.</p></div>
+                                        <div className="rounded-xl border border-slate-200 p-4"><strong>Ishikawa ou árvore de problemas — investigação de causas</strong><p className="mt-1">O Ishikawa clássico organiza causas nos 6M: <strong>Mão de obra, Método, Máquina, Material, Meio ambiente e Medida</strong>. Na saúde, eles podem ser traduzidos como Pessoas, Processos, Tecnologia, Insumos, Território e Mensuração. Diferencie causa de consequência, verifique as hipóteses com dados e não use a ferramenta para procurar culpados.</p></div>
                                         <div className="rounded-xl border border-slate-200 p-4"><strong>Matriz GUT — priorização</strong><p className="mt-1">Atribua notas para Gravidade, Urgência e Tendência e calcule G × U × T. A ordenação apoia a decisão, que ainda deve considerar equidade, magnitude, vulnerabilidade, participação e viabilidade.</p></div>
                                         <div className="rounded-xl border border-slate-200 p-4"><strong>5W2H e meta SMART — execução</strong><p className="mt-1">Defina o que, por que, onde, quando, quem, como e quanto custa. Uma meta SMART explicita indicador, linha de base, valor-alvo, população/território e prazo.</p></div>
                                         <div className="rounded-xl border border-slate-200 p-4"><strong>PDCA — aprendizagem contínua</strong><p className="mt-1">Planeje, execute em escala adequada, verifique indicadores de processo e resultado e ajuste. Não espere apenas o fim do ciclo para descobrir que uma ação não funcionou.</p></div>
@@ -1104,6 +1149,24 @@ const App: React.FC = () => {
 
       {popup && <EducationalPopup title={popup.title} content={popup.content} onClose={() => setPopup(null)} />}
 
+      {showJourneyMap && (
+          <div className="absolute inset-0 z-[118] flex items-center justify-center bg-slate-950/85 p-3 backdrop-blur-md">
+              <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-indigo-200 bg-white p-5 shadow-2xl md:p-8">
+                  <div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-black uppercase tracking-[.22em] text-indigo-600">Reta final da jornada</p><h2 className="mt-1 text-2xl font-black text-slate-900">Uma etapa de cada vez</h2><p className="mt-2 text-sm leading-relaxed text-slate-600">A divulgação mostra o estudo, o Lattes organiza o portfólio e a Sala SUS transforma a evidência em decisão. O botão abaixo leva exatamente ao próximo passo.</p></div><button onClick={() => setShowJourneyMap(false)} className="rounded-full p-2 text-slate-400 hover:bg-slate-100" aria-label="Fechar"><XCircle size={22}/></button></div>
+                  <div className="mt-6 grid gap-3 md:grid-cols-3">
+                      {[
+                          { number: '1', title: 'Divulgação', detail: 'Artigo aceito, banner pronto e congresso adequado.', done: currentStep > EcologicalStep.CONGRESS_SUBMISSION, active: currentStep === EcologicalStep.JOURNAL_SUBMISSION || currentStep === EcologicalStep.CONGRESS_SUBMISSION },
+                          { number: '2', title: 'Portfólio', detail: 'Projeto, artigo, banner e congresso cadastrados no Lattes.', done: currentStep > EcologicalStep.LATTES_REGISTRATION, active: currentStep === EcologicalStep.LATTES_REGISTRATION },
+                          { number: '3', title: 'Aplicação no SUS', detail: 'Dashboard, nota técnica, plano e cadeia de resultados.', done: currentStep === EcologicalStep.COMPLETED, active: currentStep === EcologicalStep.HEALTH_MANAGEMENT }
+                      ].map(item => <div key={item.number} className={`rounded-2xl border p-4 ${item.done ? 'border-emerald-300 bg-emerald-50' : item.active ? 'border-indigo-400 bg-indigo-50 ring-2 ring-indigo-100' : 'border-slate-200 bg-slate-50'}`}><div className="flex items-center justify-between"><span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black ${item.done ? 'bg-emerald-600 text-white' : item.active ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-500'}`}>{item.done ? '✓' : item.number}</span><span className={`text-[9px] font-black uppercase tracking-wider ${item.done ? 'text-emerald-700' : item.active ? 'text-indigo-700' : 'text-slate-400'}`}>{item.done ? 'Concluído' : item.active ? 'Agora' : 'Depois'}</span></div><h3 className="mt-3 font-black text-slate-900">{item.title}</h3><p className="mt-1 text-xs leading-relaxed text-slate-600">{item.detail}</p></div>)}
+                  </div>
+                  <div className="mt-6 rounded-2xl border border-cyan-200 bg-cyan-50 p-4 text-xs leading-relaxed text-cyan-950"><strong>Cadeia da missão final:</strong> evidência do estudo → prioridade de gestão → ação → indicador de processo → resultado → impacto na saúde.</div>
+                  <button onClick={continueFinalJourney} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-black text-white shadow-lg hover:bg-indigo-700">Continuar de onde parei <ArrowRight size={18}/></button>
+                  <button onClick={() => openBrowserDestination('pigames')} className="mt-3 w-full rounded-xl border border-slate-300 px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50">Opcional: treinar no Pigames antes de continuar</button>
+              </div>
+          </div>
+      )}
+
       {showFinishPrompt && (
           <div className="absolute inset-0 z-[120] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
               <div className="bg-white rounded-3xl shadow-2xl max-w-xl w-full p-6 md:p-8 border-t-8 border-emerald-500 animate-in zoom-in">
@@ -1111,9 +1174,18 @@ const App: React.FC = () => {
                       <Award size={34}/>
                   </div>
                   <h2 className="text-2xl font-black text-slate-900 mb-2">Jornada científica e de gestão completa!</h2>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                      Você concluiu o estudo, a divulgação científica, o portfólio e a Sala de Situação SUS. A nota técnica de gestão foi salva em Meus Arquivos. Agora pode emitir o certificado ou continuar explorando o ambiente.
-                  </p>
+                  <p className="text-sm text-slate-600 leading-relaxed">Você concluiu o percurso obrigatório. Confira os produtos antes de emitir o certificado:</p>
+                  <div className="mt-5 grid gap-2 text-xs text-slate-700 sm:grid-cols-2">
+                      {[
+                          ['Manuscrito científico', fileSystem.some(file => file.type === 'doc')],
+                          ['Banner científico', bannerCompleted],
+                          ['Artigo e congresso', currentStep >= EcologicalStep.LATTES_REGISTRATION],
+                          ['Portfólio Lattes', currentStep >= EcologicalStep.HEALTH_MANAGEMENT],
+                          ['Dashboard municipal', Boolean(healthResult)],
+                          ['Nota técnica de gestão', fileSystem.some(file => file.id === 'produto-tecnico-sus')]
+                      ].map(([label, done]) => <div key={String(label)} className={`flex items-center gap-2 rounded-xl border p-3 ${done ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}><span className={done ? 'text-emerald-600' : 'text-amber-600'}>{done ? '✓' : '!'}</span><span className="font-bold">{label}</span></div>)}
+                  </div>
+                  <p className="mt-4 rounded-xl bg-indigo-50 p-3 text-xs leading-relaxed text-indigo-900"><strong>Pigames é opcional:</strong> você pode finalizar agora ou continuar explorando para completar os desafios de conhecimento.</p>
                   <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <button onClick={() => setShowFinishPrompt(false)} className="px-4 py-3 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-50">
                           Continuar explorando
@@ -1124,6 +1196,10 @@ const App: React.FC = () => {
                   </div>
               </div>
           </div>
+      )}
+
+      {currentStep >= EcologicalStep.JOURNAL_SUBMISSION && !showJourneyMap && !showFinishPrompt && !windows[AppID.HEALTH_MANAGEMENT].isOpen && (
+          <button onClick={() => setShowJourneyMap(true)} className="absolute bottom-16 right-3 z-30 flex items-center gap-2 rounded-full border-2 border-white bg-indigo-600 px-4 py-2.5 text-xs font-black text-white shadow-2xl hover:bg-indigo-700 md:bottom-20 md:right-5"><Briefcase size={15}/> Reta final</button>
       )}
 
       {/* Desktop Icons */}
@@ -1274,7 +1350,7 @@ const App: React.FC = () => {
                 icon={getAppIcon(win.id)}
               >
                   {win.id === AppID.GUIDE && <Tutor currentScenario={currentScenario} currentStep={currentStep} xp={xp} />}
-                  {win.id === AppID.BROWSER && <Browser onSaveFile={handleSaveFile} currentScenario={currentScenario} onEmailSend={handleEmailSend} fileSystem={fileSystem} emails={emails} onSaveReference={handleSaveReference} savedReferences={savedReferences} onLogAction={updateStats} onQuizComplete={(points) => setXp(p => p + points)} currentStep={currentStep} onJournalSubmit={handleJournalSubmissionSuccess} onCongressSuccess={handleCongressSuccess} onLattesSuccess={handleLattesSuccess} inputUser={inputUser} bannerCompleted={bannerCompleted}/>}
+                  {win.id === AppID.BROWSER && <Browser onSaveFile={handleSaveFile} currentScenario={currentScenario} onEmailSend={handleEmailSend} fileSystem={fileSystem} emails={emails} onSaveReference={handleSaveReference} savedReferences={savedReferences} onLogAction={updateStats} onQuizComplete={(points) => setXp(p => p + points)} currentStep={currentStep} onJournalSubmit={handleJournalSubmissionSuccess} onCongressSuccess={handleCongressSuccess} onLattesSuccess={handleLattesSuccess} inputUser={inputUser} bannerCompleted={bannerCompleted} navigationRequest={browserNavigationRequest}/>}
                   {win.id === AppID.SHEET && <DataStudio fileSystem={fileSystem} setClipboard={setClipboard} onCopySuccess={handleCopySuccess} initialFile={fileToOpen} />}
                   {win.id === AppID.WORD && <PaperWriter clipboard={clipboard} onSaveFile={handleSaveFile} savedReferences={savedReferences} initialFile={fileToOpen?.type === 'doc' ? fileToOpen : null} onCloseDocument={() => setFileToOpen(null)} />}
                   {win.id === AppID.EXPLORER && <Explorer fileSystem={fileSystem} startPath={explorerStartPath} onOpenFile={handleOpenFileFromExplorer} onDeleteFile={handleDeleteFile} onRestoreFile={handleRestoreFile} />}
